@@ -1,14 +1,11 @@
 import hashlib
 import io
+import uuid
 
 from docx import Document
 from pypdf import PdfReader
 
-from ..models.schemas import (
-    ContactInfo,
-    ResumeProfile,
-    SkillSet,
-)
+from ..models.schemas import Profile
 
 
 class ResumeParser:
@@ -29,7 +26,7 @@ class ResumeParser:
             text.append(para.text)
         return "\n".join(text)
 
-    def parse(self, filename: str, content: bytes) -> tuple[ResumeProfile, str]:
+    def parse(self, filename: str, content: bytes) -> tuple[Profile, str]:
         ext = filename.lower().split(".")[-1]
         if ext == "pdf":
             raw_text = self.parse_pdf(content)
@@ -38,16 +35,11 @@ class ResumeParser:
         else:
             raise ValueError("Unsupported file type")
         raw_hash = hashlib.sha256(content).hexdigest()
-        # Minimal structured extraction placeholder (to be enhanced)
-        profile = ResumeProfile(
-            profile_id="",
-            contact=ContactInfo(),
-            summary=None,
+        profile = Profile(
+            id=str(uuid.uuid4()),
+            skills=[],
             experience=[],
             education=[],
             projects=[],
-            skills=SkillSet(),
-            raw_hash=raw_hash,
-            chunks=[],
         )
         return profile, raw_text
