@@ -60,3 +60,4 @@ testpaths = ["tests"]
 pythonpath = ["."]
 addopts = "-v --cov=app --cov-report=term-missing"
 asyncio_mode = "auto"
+# TODO: Add heavy ML deps (torch, sentence-transformers, faiss-cpu) in Phase 1 retrieval
