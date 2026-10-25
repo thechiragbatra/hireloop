@@ -1,58 +1,29 @@
-import builtins
-import csv
-import io
-from datetime import datetime
+from typing import List, Optional
 
-from ..models.schemas import TrackerItem
+from ..models.schemas import ApplicationRecord
 
 
 class TrackerService:
     def __init__(self):
         self._store = {}
 
-    def upsert(self, item: TrackerItem) -> TrackerItem:
-        item.date_updated = datetime.utcnow()
-        self._store[item.tracker_id] = item
+    def upsert(self, item: ApplicationRecord) -> ApplicationRecord:
+        self._store[item.id] = item
         return item
 
-    def list(self, profile_id: str | None = None, status: str | None = None) -> list[TrackerItem]:
+    def list(self, profile_id: Optional[str] = None, status: Optional[str] = None) -> List[ApplicationRecord]:
         items = list(self._store.values())
-        if profile_id:
-            items = [i for i in items if i.profile_id == profile_id]
         if status:
             items = [i for i in items if i.status == status]
         return items
 
-    def export_csv(self, items: builtins.list[TrackerItem]) -> bytes:
+    def export_csv(self, items: List[ApplicationRecord]) -> bytes:
+        import csv
+        import io
+
         buf = io.StringIO()
         w = csv.writer(buf)
-        w.writerow(
-            [
-                "tracker_id",
-                "profile_id",
-                "job_id",
-                "company",
-                "role",
-                "link",
-                "match_score",
-                "status",
-                "date_saved",
-                "date_updated",
-            ]
-        )
+        w.writerow(["id", "company", "role", "url", "match_score", "status", "date", "resume_version"])
         for i in items:
-            w.writerow(
-                [
-                    i.tracker_id,
-                    i.profile_id,
-                    i.job_id,
-                    i.company,
-                    i.role,
-                    i.link,
-                    i.match_score,
-                    i.status,
-                    i.date_saved.isoformat(),
-                    i.date_updated.isoformat(),
-                ]
-            )
+            w.writerow([i.id, i.company, i.role, i.url, i.match_score, i.status, i.date.isoformat(), i.resume_version])
         return buf.getvalue().encode("utf-8")
