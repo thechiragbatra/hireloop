@@ -34,7 +34,7 @@ class ResumeParser:
             raw_text = self.parse_docx(content)
         else:
             raise ValueError("Unsupported file type")
-        raw_hash = hashlib.sha256(content).hexdigest()
+        hashlib.sha256(content).hexdigest()
         profile = Profile(
             id=str(uuid.uuid4()),
             skills=[],
