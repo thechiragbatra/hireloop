@@ -59,7 +59,18 @@ def build_graph(
         }
 
     async def node_fetch_jobs(state: PipelineState) -> PipelineState:
-        filters: dict[str, Any] = state.get("filters", {})
+        filters: dict[str, Any] = dict(state.get("filters", {}))
+        profile = state.get("profile")
+        if profile and not filters.get("query"):
+            try:
+                from app.models.schemas import Profile as ProfileSchema
+
+                prof = ProfileSchema(**profile)
+                skills = prof.skills or []
+                if skills:
+                    filters["query"] = " ".join(skills[:5])
+            except Exception:
+                pass
         fetched: list[dict] = []
         for adapter in ADAPTERS.values():
             jobs = await adapter.fetch(filters)
