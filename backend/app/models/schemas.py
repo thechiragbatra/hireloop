@@ -1,114 +1,126 @@
+from datetime import date, datetime
+from typing import List, Literal, Optional
+
 from pydantic import BaseModel, Field
-from typing import List, Optional, Literal, Dict, Any
-from datetime import datetime
 
-class ContactInfo(BaseModel):
-    name: Optional[str] = None
-    email: Optional[str] = None
-    phone: Optional[str] = None
-    location: Optional[str] = None
-    links: Dict[str, str] = Field(default_factory=dict)
 
-class EducationItem(BaseModel):
-    institution: Optional[str] = None
-    degree: Optional[str] = None
-    field: Optional[str] = None
-    start_date: Optional[str] = None
-    end_date: Optional[str] = None
-    location: Optional[str] = None
-    details: List[str] = Field(default_factory=list)
+class Contact(BaseModel):
+    """Contact information (kept minimal)."""
+
+    email: Optional[str] = Field(default=None, description="Contact email")
+    phone: Optional[str] = Field(default=None, description="Contact phone")
+    location: Optional[str] = Field(default=None, description="Location")
+    linkedin: Optional[str] = Field(default=None, description="LinkedIn URL")
+    github: Optional[str] = Field(default=None, description="GitHub URL")
+    website: Optional[str] = Field(default=None, description="Website URL")
+
+
+class Bullet(BaseModel):
+    """A resume bullet with stable id for source citation."""
+
+    id: str = Field(description="Stable identifier for citation")
+    text: str = Field(description="Bullet text")
+
 
 class ExperienceItem(BaseModel):
-    company: Optional[str] = None
-    title: Optional[str] = None
-    start_date: Optional[str] = None
-    end_date: Optional[str] = None
-    location: Optional[str] = None
-    bullets: List[str] = Field(default_factory=list)
-    technologies: List[str] = Field(default_factory=list)
+    """Work experience entry."""
+
+    id: str = Field(description="Stable identifier")
+    company: str = Field(description="Company name")
+    title: str = Field(description="Job title")
+    start_date: Optional[date] = Field(default=None)
+    end_date: Optional[date] = Field(default=None)
+    location: Optional[str] = Field(default=None)
+    bullets: List[Bullet] = Field(default_factory=list)
+
+
+class EducationItem(BaseModel):
+    """Education entry."""
+
+    id: str = Field(description="Stable identifier")
+    institution: str = Field(description="Institution name")
+    degree: Optional[str] = Field(default=None)
+    field_of_study: Optional[str] = Field(default=None)
+    start_date: Optional[date] = Field(default=None)
+    end_date: Optional[date] = Field(default=None)
+
 
 class ProjectItem(BaseModel):
-    name: Optional[str] = None
-    role: Optional[str] = None
-    start_date: Optional[str] = None
-    end_date: Optional[str] = None
-    bullets: List[str] = Field(default_factory=list)
+    """Project entry with bullets and stable ids."""
+
+    id: str = Field(description="Stable identifier")
+    name: str = Field(description="Project name")
+    description: Optional[str] = Field(default=None)
+    bullets: List[Bullet] = Field(default_factory=list)
     technologies: List[str] = Field(default_factory=list)
-    links: Dict[str, str] = Field(default_factory=dict)
+    url: Optional[str] = Field(default=None)
 
-class SkillSet(BaseModel):
-    technical: List[str] = Field(default_factory=list)
-    soft: List[str] = Field(default_factory=list)
-    tools: List[str] = Field(default_factory=list)
-    certifications: List[str] = Field(default_factory=list)
 
-class ProfileChunk(BaseModel):
-    chunk_id: str
-    source_type: Literal["experience", "project", "skill", "education", "summary"]
-    source_ref: str
-    text: str
-    embedding_id: Optional[str] = None
+class Profile(BaseModel):
+    """User profile schema with stable ids for source citations."""
 
-class ResumeProfile(BaseModel):
-    profile_id: str
-    contact: ContactInfo = Field(default_factory=ContactInfo)
-    summary: Optional[str] = None
+    id: str = Field(description="Profile identifier")
+    contact: Optional[Contact] = Field(default=None)
+    skills: List[str] = Field(default_factory=list, description="Skills list")
     experience: List[ExperienceItem] = Field(default_factory=list)
-    education: List[EducationItem] = Field(default_factory=list)
     projects: List[ProjectItem] = Field(default_factory=list)
-    skills: SkillSet = Field(default_factory=SkillSet)
-    raw_hash: Optional[str] = None
-    chunks: List[ProfileChunk] = Field(default_factory=list)
+    education: List[EducationItem] = Field(default_factory=list)
 
-class ResumeUploadResponse(BaseModel):
-    session_id: str
-    profile_id: str
-    status: str
-    expires_at: datetime
 
-class JobPosting(BaseModel):
-    job_id: str
-    source: str
-    source_url: str
-    company: Optional[str] = None
-    title: Optional[str] = None
-    location: Optional[str] = None
-    remote: Optional[bool] = None
-    description: Optional[str] = None
+class Job(BaseModel):
+    """Job posting schema."""
+
+    id: str = Field(description="Job identifier")
+    title: str = Field(description="Job title")
+    company: str = Field(description="Company name")
+    location: Optional[str] = Field(default=None)
+    description: str = Field(description="Job description")
     requirements: List[str] = Field(default_factory=list)
-    nice_to_have: List[str] = Field(default_factory=list)
-    salary_range: Optional[str] = None
-    posted_at: Optional[datetime] = None
-    expires_at: Optional[datetime] = None
-    hash: str
+    url: Optional[str] = Field(default=None)
+    source: str = Field(description="Source: greenhouse|lever|ashby|adzuna|remoteok|custom")
 
-class MatchExplanation(BaseModel):
-    job_id: str
-    score: int = Field(ge=0, le=100)
-    reasons: List[str] = Field(default_factory=list)
-    missing_skills: List[str] = Field(default_factory=list)
-    strengths: List[str] = Field(default_factory=list)
-    risk_flags: List[str] = Field(default_factory=list)
 
 class MatchResult(BaseModel):
-    job_id: str
-    job: JobPosting
-    explanation: Optional[MatchExplanation] = None
-    retrieval_score: float = 0.0
-    rerank_score: float = 0.0
-    final_score: float = 0.0
-    explain_source: Literal["rules", "hybrid", "llm"] = "hybrid"
+    """Match result with explanation."""
 
-class TrackerItem(BaseModel):
-    tracker_id: str
-    profile_id: str
-    job_id: str
-    company: Optional[str] = None
-    role: Optional[str] = None
-    link: Optional[str] = None
-    match_score: float = 0.0
+    job_id: str = Field(description="Job identifier")
+    score: float = Field(ge=0, le=100, description="Match score")
+    reasons: List[str] = Field(default_factory=list)
+    missing_skills: List[str] = Field(default_factory=list)
+
+
+class TailoredBullet(BaseModel):
+    """Tailored bullet with source citations."""
+
+    text: str = Field(description="Tailored bullet text")
+    source_ids: List[str] = Field(default_factory=list, description="Source bullet/project ids")
+
+
+class TailoredResume(BaseModel):
+    """Tailored resume with citations."""
+
+    job_id: str = Field(description="Target job identifier")
+    bullets: List[TailoredBullet] = Field(default_factory=list)
+    summary: Optional[str] = Field(default=None)
+
+
+class FaithfulnessReport(BaseModel):
+    """Faithfulness verification report."""
+
+    overall_score: float = Field(ge=0, le=1, description="Overall faithfulness score")
+    supported_bullets: int = Field(description="Number of supported bullets")
+    total_bullets: int = Field(description="Total bullets")
+    unsupported: List[str] = Field(default_factory=list)
+
+
+class ApplicationRecord(BaseModel):
+    """Application tracker record."""
+
+    id: str = Field(description="Record identifier")
+    company: str = Field(description="Company name")
+    role: str = Field(description="Role/title")
+    url: Optional[str] = Field(default=None)
+    match_score: float = Field(ge=0, le=100)
     status: Literal["saved", "applied", "interview", "rejected", "offer", "archived"] = "saved"
-    date_saved: datetime = Field(default_factory=datetime.utcnow)
-    date_updated: datetime = Field(default_factory=datetime.utcnow)
-    resume_version_id: Optional[str] = None
-    notes: Optional[str] = None
+    date: datetime = Field(default_factory=datetime.utcnow)
+    resume_version: str = Field(description="Resume version identifier")
