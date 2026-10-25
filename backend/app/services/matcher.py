@@ -1,15 +1,22 @@
+from typing import List
+
 from ..llm.client import LLMClient
-from ..models.schemas import JobPosting, MatchResult, ResumeProfile
+from ..models.schemas import Job, MatchResult, Profile
 
 
 class Matcher:
     def __init__(self, llm: LLMClient):
         self.llm = llm
 
-    async def match(self, profile: ResumeProfile, jobs: list[JobPosting]) -> list[MatchResult]:
-        results: list[MatchResult] = []
+    async def match(self, profile: Profile, jobs: List[Job]) -> List[MatchResult]:
+        results: List[MatchResult] = []
         for job in jobs:
-            # Cost funnel placeholder - rules/filter first
-            mr = MatchResult(job_id=job.job_id, job=job, final_score=0.0)
-            results.append(mr)
+            results.append(
+                MatchResult(
+                    job_id=job.id,
+                    score=0.0,
+                    reasons=[],
+                    missing_skills=[],
+                )
+            )
         return results
