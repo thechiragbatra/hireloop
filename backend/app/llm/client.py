@@ -1,16 +1,34 @@
-from typing import Any, Optional, Type
+from abc import ABC, abstractmethod
+from typing import Any, Dict, Optional, Type
+
 from pydantic import BaseModel
 
-class LLMClient:
-    def __init__(self, api_key: Optional[str] = None, model: str = "cheap-model"):
-        self.api_key = api_key
-        self.model = model
 
-    async def structured(self, prompt: str, schema: Type[BaseModel], **kwargs) -> BaseModel:
-        # Placeholder for structured output
-        # In practice use provider with JSON/schema enforcement
-        instance = schema()
-        return instance
+class LLMClient(ABC):
+    """Provider-agnostic LLM client interface."""
+
+    def __init__(self, api_key: Optional[str] = None, base_url: Optional[str] = None, timeout: int = 60):
+        self.api_key = api_key
+        self.base_url = base_url
+        self.timeout = timeout
+
+    @abstractmethod
+    async def complete(self, prompt: str, **kwargs) -> str:
+        """Generate completion."""
+        raise NotImplementedError
+
+    @abstractmethod
+    async def complete_structured(self, schema: Type[BaseModel], prompt: str, **kwargs) -> BaseModel:
+        """Generate structured output conforming to schema."""
+        raise NotImplementedError
+
+
+class FakeLLMClient(LLMClient):
+    """Fake LLM client for tests - no real API calls."""
 
     async def complete(self, prompt: str, **kwargs) -> str:
-        return ""
+        return "fake response"
+
+    async def complete_structured(self, schema: Type[BaseModel], prompt: str, **kwargs) -> BaseModel:
+        # Return default instance
+        return schema()
