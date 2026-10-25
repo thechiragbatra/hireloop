@@ -1,32 +1,59 @@
-# React + TypeScript + Vite
+# Hireloop Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+React + TypeScript + Vite + Tailwind SPA for the Hireloop AI Job Copilot.
 
-Currently, two official plugins are available:
+## Tech stack
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- React 19 + TypeScript
+- Vite (build tool)
+- Tailwind CSS (styling)
+- React Router (hash-based routing for GitHub Pages SPA compatibility)
+- Supabase JS client (auth + storage)
+- Axios (API client with Supabase JWT interceptors)
+- Lucide React (icons)
 
-## React Compiler
+## Pages
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+| Path | Purpose |
+|------|---------|
+| `/login` | Sign in / sign up (email, Google OAuth) |
+| `/dashboard` | Onboarding: upload resume, find jobs, track applications |
+| `/upload` | Upload and parse resume (PDF/DOCX) |
+| `/jobs` | Browse jobs from public ATS sources |
+| `/match` | Match score details for a job |
+| `/tailor` | Tailor resume with faithfulness report |
+| `/tracker` | Application tracker |
+| `/apply-kit/:profileId/:jobId` | Download tailored resume + cover letter |
 
-## Expanding the Oxlint configuration
+## Setup
 
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
+```bash
+cd frontend
+npm install
 
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
+# Environment (copy .env.example to .env.local and fill in values)
+cp .env.example .env.local
+
+# Dev server (proxies /api to backend)
+npm run dev          # http://localhost:5173
+
+# Production build for GitHub Pages (base path /hireloop-1/)
+VITE_BASE=/hireloop-1/ npm run build   # output: frontend/dist/
+
+# Preview production build locally
+npm run preview
 ```
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+## GitHub Pages deployment
+
+Deploys automatically on push to `main` via `.github/workflows/frontend.yml`. Requires repo secrets:
+
+- `VITE_API_URL` — Render backend URL
+- `VITE_SUPABASE_URL` — Supabase project URL
+- `VITE_SUPABASE_ANON_KEY` — Supabase anon key
+
+## Notes
+
+- Uses `HashRouter` so the SPA works on GitHub Pages without a `404.html` fallback.
+- `vite.config.ts` sets `base` from `VITE_BASE` (defaults to `/hireloop-1/`).
+- Auth tokens are stored in `localStorage` and attached to Axios requests as `Authorization: Bearer <token>`.
