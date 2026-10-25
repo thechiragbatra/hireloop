@@ -1,5 +1,4 @@
 from abc import ABC, abstractmethod
-from typing import Any, Dict, Optional, Type
 
 from pydantic import BaseModel
 
@@ -7,7 +6,7 @@ from pydantic import BaseModel
 class LLMClient(ABC):
     """Provider-agnostic LLM client interface."""
 
-    def __init__(self, api_key: Optional[str] = None, base_url: Optional[str] = None, timeout: int = 60):
+    def __init__(self, api_key: str | None = None, base_url: str | None = None, timeout: int = 60):
         self.api_key = api_key
         self.base_url = base_url
         self.timeout = timeout
@@ -18,7 +17,9 @@ class LLMClient(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    async def complete_structured(self, schema: Type[BaseModel], prompt: str, **kwargs) -> BaseModel:
+    async def complete_structured(
+        self, schema: type[BaseModel], prompt: str, **kwargs
+    ) -> BaseModel:
         """Generate structured output conforming to schema."""
         raise NotImplementedError
 
@@ -29,6 +30,8 @@ class FakeLLMClient(LLMClient):
     async def complete(self, prompt: str, **kwargs) -> str:
         return "fake response"
 
-    async def complete_structured(self, schema: Type[BaseModel], prompt: str, **kwargs) -> BaseModel:
+    async def complete_structured(
+        self, schema: type[BaseModel], prompt: str, **kwargs
+    ) -> BaseModel:
         # Return default instance
         return schema()

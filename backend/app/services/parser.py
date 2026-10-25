@@ -1,10 +1,15 @@
-from typing import Tuple
-from pypdf import PdfReader
-from docx import Document
-import io
 import hashlib
+import io
 
-from ..models.schemas import ResumeProfile, ContactInfo, ExperienceItem, EducationItem, ProjectItem, SkillSet
+from docx import Document
+from pypdf import PdfReader
+
+from ..models.schemas import (
+    ContactInfo,
+    ResumeProfile,
+    SkillSet,
+)
+
 
 class ResumeParser:
     def parse_pdf(self, content: bytes) -> str:
@@ -24,7 +29,7 @@ class ResumeParser:
             text.append(para.text)
         return "\n".join(text)
 
-    def parse(self, filename: str, content: bytes) -> Tuple[ResumeProfile, str]:
+    def parse(self, filename: str, content: bytes) -> tuple[ResumeProfile, str]:
         ext = filename.lower().split(".")[-1]
         if ext == "pdf":
             raw_text = self.parse_pdf(content)
@@ -43,6 +48,6 @@ class ResumeParser:
             projects=[],
             skills=SkillSet(),
             raw_hash=raw_hash,
-            chunks=[]
+            chunks=[],
         )
         return profile, raw_text

@@ -1,5 +1,4 @@
 from functools import lru_cache
-from typing import List
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -12,7 +11,7 @@ class Settings(BaseSettings):
     app_port: int = 8000
     debug: bool = False
 
-    allowed_cors_origins: List[str] = ["http://localhost:5173", "http://localhost:3000"]
+    allowed_cors_origins: list[str] = ["http://localhost:5173", "http://localhost:3000"]
 
     database_url: str = "sqlite:///./data/hireloop.db"
 

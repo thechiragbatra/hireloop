@@ -1,9 +1,10 @@
 from datetime import datetime, timedelta
-from typing import Dict, Tuple
+
 from .privacy import hash_ip
 
 # In-memory simple rate limiter (for dev; can be moved to Redis)
-_store: Dict[Tuple[str, str], list[datetime]] = {}
+_store: dict[tuple[str, str], list[datetime]] = {}
+
 
 def check_rate_limit(ip: str, endpoint: str, limit_per_min: int = 10) -> bool:
     key = (hash_ip(ip), endpoint)

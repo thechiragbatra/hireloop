@@ -1,13 +1,14 @@
 import hashlib
-from datetime import datetime, timedelta
-from typing import Optional
+
 
 def hash_ip(ip: str) -> str:
     return hashlib.sha256(ip.encode()).hexdigest()
 
+
 def redact_log(msg: str) -> str:
     # Basic redaction - avoid logging resume text
     return msg
+
 
 PRIVACY_NOTICE = """
 Job Copilot Privacy Notice

@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 
-from . import health, upload, jobs, tailor, tracker
+from . import health, jobs, tailor, tracker, upload
 
 api_router = APIRouter()
 api_router.include_router(health.router, tags=["health"])
