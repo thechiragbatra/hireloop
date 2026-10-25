@@ -2,6 +2,8 @@ from functools import lru_cache
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+from app.llm.client import LLMClient, build_llm_client
+
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
@@ -45,3 +47,13 @@ class Settings(BaseSettings):
 @lru_cache
 def get_settings() -> Settings:
     return Settings()
+
+
+def get_llm_client() -> LLMClient:
+    settings = get_settings()
+    return build_llm_client(
+        provider=settings.llm_provider,
+        api_key=settings.llm_api_key or None,
+        base_url=settings.llm_base_url or None,
+        model=settings.strong_model_name,
+    )

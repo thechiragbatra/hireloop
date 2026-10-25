@@ -11,7 +11,9 @@ class TrackerService:
         self._store[item.id] = item
         return item
 
-    def list(self, profile_id: str | None = None, status: str | None = None) -> list[ApplicationRecord]:
+    def list(
+        self, profile_id: str | None = None, status: str | None = None
+    ) -> list[ApplicationRecord]:
         items = list(self._store.values())
         if status:
             items = [i for i in items if i.status == status]
@@ -23,7 +25,29 @@ class TrackerService:
 
         buf = io.StringIO()
         w = csv.writer(buf)
-        w.writerow(["id", "company", "role", "url", "match_score", "status", "date", "resume_version"])
+        w.writerow(
+            ["id", "company", "role", "url", "match_score", "status", "date", "resume_version"]
+        )
         for i in items:
-            w.writerow([i.id, i.company, i.role, i.url, i.match_score, i.status, i.date.isoformat(), i.resume_version])
+            w.writerow(
+                [
+                    i.id,
+                    i.company,
+                    i.role,
+                    i.url,
+                    i.match_score,
+                    i.status,
+                    i.date.isoformat(),
+                    i.resume_version,
+                ]
+            )
         return buf.getvalue().encode("utf-8")
+
+    def delete(self, record_id: str) -> bool:
+        if record_id in self._store:
+            del self._store[record_id]
+            return True
+        return False
+
+    def clear(self) -> None:
+        self._store.clear()

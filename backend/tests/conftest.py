@@ -1,9 +1,16 @@
 import pytest
 from fastapi.testclient import TestClient
 
+from app.core.storage import get_storage
 from app.llm.client import FakeLLMClient
 from app.main import app
 from app.models.schemas import Bullet, ExperienceItem, Job, Profile, ProjectItem
+
+
+@pytest.fixture(autouse=True)
+def clean_storage():
+    storage = get_storage()
+    storage.clear()
 
 
 @pytest.fixture
