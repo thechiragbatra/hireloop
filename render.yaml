@@ -1,0 +1,31 @@
+services:
+  - type: web
+    name: hireloop-backend
+    env: python
+    plan: free
+    region: oregon
+    buildCommand: "pip install -r requirements.txt"
+    startCommand: "uvicorn app.main:app --host 0.0.0.0 --port $PORT"
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.12"
+      - key: DATABASE_URL
+        sync: false
+      - key: DATABASE_URL_ASYNC
+        sync: false
+      - key: LLM_PROVIDER
+        value: "openrouter"
+      - key: LLM_API_KEY
+        sync: false
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_ANON_KEY
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: SUPABASE_JWT_SECRET
+        sync: false
+      - key: SUPABASE_STORAGE_BUCKET
+        value: "hireloop-resumes"
+      - key: ALLOWED_CORS_ORIGINS
+        value: '["https://thechiragbatra.github.io","http://localhost:5173"]'

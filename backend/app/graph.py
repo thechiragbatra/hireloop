@@ -18,6 +18,7 @@ class PipelineState(TypedDict, total=False):
     profile_id: str
     filename: str
     raw_text: str
+    user_id: str | None
     filters: dict[str, Any]
     profile: Any
     jobs: list[dict]
@@ -48,11 +49,13 @@ def build_graph(
     async def node_parse(state: PipelineState) -> PipelineState:
         content = state.get("content", b"")
         filename = state.get("filename", "resume.pdf")
+        user_id = state.get("user_id")
         profile, raw_text = await parser.parse(filename, content)
         profile_id = profile.id
-        storage.save_profile(profile_id, raw_text, profile.model_dump())
+        storage.save_profile(profile_id, raw_text, profile.model_dump(), user_id=user_id)
         return {
             "profile_id": profile_id,
+            "user_id": user_id,
             "raw_text": raw_text,
             "profile": profile.model_dump(),
             "status": "parsed",
@@ -61,6 +64,7 @@ def build_graph(
     async def node_fetch_jobs(state: PipelineState) -> PipelineState:
         filters: dict[str, Any] = dict(state.get("filters", {}))
         profile = state.get("profile")
+        user_id = state.get("user_id")
         if profile and not filters.get("query"):
             try:
                 from app.models.schemas import Profile as ProfileSchema
@@ -75,27 +79,29 @@ def build_graph(
         for adapter in ADAPTERS.values():
             jobs = await adapter.fetch(filters)
             fetched.extend([j.model_dump() for j in jobs])
-        storage.save_jobs(fetched)
-        return {"jobs": fetched, "status": "jobs_fetched"}
+        storage.save_jobs(fetched, user_id=user_id)
+        return {"jobs": fetched, "user_id": user_id, "status": "jobs_fetched"}
 
     async def node_match(state: PipelineState) -> PipelineState:
         profile = state.get("profile")
         jobs = state.get("jobs", [])
+        user_id = state.get("user_id")
         if not profile:
-            return {"matches": [], "status": "no_profile"}
+            return {"matches": [], "user_id": user_id, "status": "no_profile"}
         from app.models.schemas import Profile as ProfileSchema
 
         prof = ProfileSchema(**profile)
         job_objs = [Job(**j) for j in jobs]
         results = await matcher.match(prof, job_objs)
         out = [r.model_dump() for r in results]
-        return {"matches": out, "status": "matched"}
+        return {"matches": out, "user_id": user_id, "status": "matched"}
 
     async def node_retrieve_context(state: PipelineState) -> PipelineState:
         profile = state.get("profile")
         job = state.get("selected_job") or (state.get("jobs") or [{}])[0]
+        user_id = state.get("user_id")
         if not profile or not job:
-            return {"retrieved_chunks": [], "status": "nothing_to_retrieve"}
+            return {"retrieved_chunks": [], "user_id": user_id, "status": "nothing_to_retrieve"}
         from app.models.schemas import Profile as ProfileSchema
 
         prof = ProfileSchema(**profile)
@@ -105,34 +111,36 @@ def build_graph(
         results = retriever.search_hybrid(job_obj.description, top_k=20)
         chunk_map = {c["id"]: c for c in chunks}
         retrieved = [chunk_map[cid] for cid, _ in results if cid in chunk_map]
-        return {"retrieved_chunks": retrieved, "status": "context_retrieved"}
+        return {"retrieved_chunks": retrieved, "user_id": user_id, "status": "context_retrieved"}
 
     async def node_tailor(state: PipelineState) -> PipelineState:
         profile = state.get("profile")
         jobs = state.get("jobs", [])
+        user_id = state.get("user_id")
         job = state.get("selected_job") or (jobs[0] if jobs else None)
         if not profile or job is None:
-            return {"tailored": None, "status": "no_jobs"}
+            return {"tailored": None, "user_id": user_id, "status": "no_jobs"}
         from app.models.schemas import Profile as ProfileSchema
 
         prof = ProfileSchema(**profile)
         job_obj = Job(**job) if isinstance(job, dict) else job
         chunks = state.get("retrieved_chunks") or chunker.chunk(prof)
         tailored = await tailor.tailor(prof, job_obj, chunks)
-        return {"tailored": tailored.model_dump(), "status": "tailored"}
+        return {"tailored": tailored.model_dump(), "user_id": user_id, "status": "tailored"}
 
     async def node_verify(state: PipelineState) -> PipelineState:
         profile = state.get("profile")
         tailored = state.get("tailored")
+        user_id = state.get("user_id")
         if not profile or not tailored:
-            return {"faithfulness": None, "status": "nothing_to_verify"}
+            return {"faithfulness": None, "user_id": user_id, "status": "nothing_to_verify"}
         from app.models.schemas import Profile as ProfileSchema
         from app.models.schemas import TailoredResume
 
         prof = ProfileSchema(**profile)
         resume = TailoredResume(**tailored)
         report = await verifier.verify(prof, resume)
-        return {"faithfulness": report.model_dump(), "status": "verified"}
+        return {"faithfulness": report.model_dump(), "user_id": user_id, "status": "verified"}
 
     graph = StateGraph(PipelineState)
     graph.add_node("parse", node_parse)
