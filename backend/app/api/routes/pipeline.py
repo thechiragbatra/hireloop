@@ -10,7 +10,7 @@ graph = build_graph()
 
 @router.post("/pipeline")
 async def pipeline(file: UploadFile = File(...)) -> dict:
-    """Run the full Hireloop pipeline: parse → fetch jobs → match → tailor → verify."""
+    """Run the full Hireloop pipeline: parse → fetch jobs → match → retrieve context → tailor → verify."""
     if not file.filename:
         raise HTTPException(status_code=400, detail="No filename provided")
     content = await file.read()

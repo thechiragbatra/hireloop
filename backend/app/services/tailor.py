@@ -16,8 +16,9 @@ class TailorService:
         self.llm = llm or get_llm_client()
         self.chunker = chunker or ProfileChunker()
 
-    async def tailor(self, profile, job: Job) -> TailoredResume:
-        chunks = self.chunker.chunk(profile)
+    async def tailor(self, profile, job: Job, chunks: list[dict] | None = None) -> TailoredResume:
+        if chunks is None:
+            chunks = self.chunker.chunk(profile)
         if isinstance(self.llm, FakeLLMClient) or not chunks:
             return self._fallback(profile, job, chunks)
         try:

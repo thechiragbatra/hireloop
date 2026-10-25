@@ -9,6 +9,7 @@ from app.services.faithfulness import FaithfulnessService
 from app.services.job_sources import ADAPTERS
 from app.services.matcher import Matcher
 from app.services.parser import ResumeParser
+from app.services.retriever import HybridRetriever
 from app.services.tailor import TailorService
 
 
@@ -22,6 +23,7 @@ class PipelineState(TypedDict, total=False):
     jobs: list[dict]
     matches: list[dict]
     selected_job: Job | dict | None
+    retrieved_chunks: list[dict]
     tailored: Any
     faithfulness: Any
     status: str
@@ -33,12 +35,14 @@ def build_graph(
     tailor: TailorService | None = None,
     verifier: FaithfulnessService | None = None,
     chunker: ProfileChunker | None = None,
+    retriever: HybridRetriever | None = None,
 ):
     parser = parser or ResumeParser()
     matcher = matcher or Matcher()
     chunker = chunker or ProfileChunker()
     tailor = tailor or TailorService(chunker=chunker)
     verifier = verifier or FaithfulnessService(chunker=chunker)
+    retriever = retriever or HybridRetriever()
     storage = get_storage()
 
     async def node_parse(state: PipelineState) -> PipelineState:
@@ -76,6 +80,22 @@ def build_graph(
         out = [r.model_dump() for r in results]
         return {"matches": out, "status": "matched"}
 
+    async def node_retrieve_context(state: PipelineState) -> PipelineState:
+        profile = state.get("profile")
+        job = state.get("selected_job") or (state.get("jobs") or [{}])[0]
+        if not profile or not job:
+            return {"retrieved_chunks": [], "status": "nothing_to_retrieve"}
+        from app.models.schemas import Profile as ProfileSchema
+
+        prof = ProfileSchema(**profile)
+        job_obj = Job(**job) if isinstance(job, dict) else job
+        chunks = chunker.chunk(prof)
+        retriever.build_index([(c["id"], c["text"]) for c in chunks])
+        results = retriever.search_hybrid(job_obj.description, top_k=20)
+        chunk_map = {c["id"]: c for c in chunks}
+        retrieved = [chunk_map[cid] for cid, _ in results if cid in chunk_map]
+        return {"retrieved_chunks": retrieved, "status": "context_retrieved"}
+
     async def node_tailor(state: PipelineState) -> PipelineState:
         profile = state.get("profile")
         jobs = state.get("jobs", [])
@@ -86,7 +106,8 @@ def build_graph(
 
         prof = ProfileSchema(**profile)
         job_obj = Job(**job) if isinstance(job, dict) else job
-        tailored = await tailor.tailor(prof, job_obj)
+        chunks = state.get("retrieved_chunks") or chunker.chunk(prof)
+        tailored = await tailor.tailor(prof, job_obj, chunks)
         return {"tailored": tailored.model_dump(), "status": "tailored"}
 
     async def node_verify(state: PipelineState) -> PipelineState:
@@ -106,11 +127,13 @@ def build_graph(
     graph.add_node("parse", node_parse)
     graph.add_node("fetch_jobs", node_fetch_jobs)
     graph.add_node("match", node_match)
+    graph.add_node("retrieve_context", node_retrieve_context)
     graph.add_node("tailor", node_tailor)
     graph.add_node("verify", node_verify)
     graph.add_edge("parse", "fetch_jobs")
     graph.add_edge("fetch_jobs", "match")
-    graph.add_edge("match", "tailor")
+    graph.add_edge("match", "retrieve_context")
+    graph.add_edge("retrieve_context", "tailor")
     graph.add_edge("tailor", "verify")
     graph.add_edge("verify", END)
     graph.set_entry_point("parse")
