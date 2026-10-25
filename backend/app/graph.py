@@ -78,9 +78,10 @@ def build_graph(
 
     async def node_tailor(state: PipelineState) -> PipelineState:
         profile = state.get("profile")
-        job = state.get("selected_job") or (state.get("jobs") or [{}])[0]
-        if not profile:
-            return {"tailored": None, "status": "no_profile"}
+        jobs = state.get("jobs", [])
+        job = state.get("selected_job") or (jobs[0] if jobs else None)
+        if not profile or job is None:
+            return {"tailored": None, "status": "no_jobs"}
         from app.models.schemas import Profile as ProfileSchema
 
         prof = ProfileSchema(**profile)
@@ -107,9 +108,9 @@ def build_graph(
     graph.add_node("match", node_match)
     graph.add_node("tailor", node_tailor)
     graph.add_node("verify", node_verify)
-    graph.add_edge("parse", END)
-    graph.add_edge("fetch_jobs", END)
-    graph.add_edge("match", END)
+    graph.add_edge("parse", "fetch_jobs")
+    graph.add_edge("fetch_jobs", "match")
+    graph.add_edge("match", "tailor")
     graph.add_edge("tailor", "verify")
     graph.add_edge("verify", END)
     graph.set_entry_point("parse")

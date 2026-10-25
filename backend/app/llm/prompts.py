@@ -78,3 +78,17 @@ Rules:
 Resume text:
 {raw_text}
 """
+
+COVER_LETTER_PROMPT = """\
+You are a cover letter writer. Write a concise, honest cover letter for a job application.
+
+Use ONLY facts from the provided profile. Do not fabricate companies, metrics, or skills. Mirror the job description where truthful.
+
+Return ONLY the cover letter text, no markdown fences, no subject line preamble.
+
+Job:
+{job}
+
+Profile:
+{profile}
+"""
