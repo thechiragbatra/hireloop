@@ -1,4 +1,4 @@
-from typing import List, Optional
+import builtins
 
 from ..models.schemas import ApplicationRecord
 
@@ -11,13 +11,13 @@ class TrackerService:
         self._store[item.id] = item
         return item
 
-    def list(self, profile_id: Optional[str] = None, status: Optional[str] = None) -> List[ApplicationRecord]:
+    def list(self, profile_id: str | None = None, status: str | None = None) -> list[ApplicationRecord]:
         items = list(self._store.values())
         if status:
             items = [i for i in items if i.status == status]
         return items
 
-    def export_csv(self, items: List[ApplicationRecord]) -> bytes:
+    def export_csv(self, items: builtins.list[ApplicationRecord]) -> bytes:
         import csv
         import io
 

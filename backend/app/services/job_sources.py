@@ -1,40 +1,40 @@
-from typing import Any, Dict, List
+from typing import Any
 
 from ..models.schemas import Job
 
 
 class JobSourceAdapter:
-    async def fetch(self, filters: Dict[str, Any]) -> List[Job]:
+    async def fetch(self, filters: dict[str, Any]) -> list[Job]:
         raise NotImplementedError
 
 
 class GreenhouseAdapter(JobSourceAdapter):
-    async def fetch(self, filters: Dict[str, Any]) -> List[Job]:
+    async def fetch(self, filters: dict[str, Any]) -> list[Job]:
         return []
 
 
 class LeverAdapter(JobSourceAdapter):
-    async def fetch(self, filters: Dict[str, Any]) -> List[Job]:
+    async def fetch(self, filters: dict[str, Any]) -> list[Job]:
         return []
 
 
 class AshbyAdapter(JobSourceAdapter):
-    async def fetch(self, filters: Dict[str, Any]) -> List[Job]:
+    async def fetch(self, filters: dict[str, Any]) -> list[Job]:
         return []
 
 
 class AdzunaAdapter(JobSourceAdapter):
-    async def fetch(self, filters: Dict[str, Any]) -> List[Job]:
+    async def fetch(self, filters: dict[str, Any]) -> list[Job]:
         return []
 
 
 class RemoteOKAdapter(JobSourceAdapter):
-    async def fetch(self, filters: Dict[str, Any]) -> List[Job]:
+    async def fetch(self, filters: dict[str, Any]) -> list[Job]:
         return []
 
 
 class CustomCareerPageAdapter(JobSourceAdapter):
-    async def fetch(self, filters: Dict[str, Any]) -> List[Job]:
+    async def fetch(self, filters: dict[str, Any]) -> list[Job]:
         return []
 
 

@@ -1,11 +1,10 @@
-from typing import List
 
 from ..models.schemas import Profile
 
 
 class ProfileChunker:
-    def chunk(self, profile: Profile) -> List[dict]:
-        chunks: List[dict] = []
+    def chunk(self, profile: Profile) -> list[dict]:
+        chunks: list[dict] = []
         for exp in profile.experience:
             for bullet in exp.bullets:
                 chunks.append({"id": bullet.id, "text": bullet.text, "source": "experience"})
