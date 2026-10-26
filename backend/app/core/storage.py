@@ -169,3 +169,10 @@ try:
         pass
 except Exception:
     Base = object
+
+    def save_jobs(self, jobs, user_id=None):
+        for j in jobs:
+            jid = j.get("id") if isinstance(j, dict) else getattr(j, "id", None)
+            if jid:
+                self._jobs[jid] = j
+        return jobs
