@@ -6,6 +6,7 @@ import {
   Navigate,
 } from "react-router-dom"
 import { supabase } from "@/lib/supabase"
+import type { AuthChangeEvent, Session } from "@supabase/supabase-js"
 import { Navbar } from "@/components/Navbar"
 import { Login } from "@/pages/Login"
 import { Dashboard } from "@/pages/Dashboard"
@@ -28,9 +29,11 @@ export const App: React.FC = () => {
     }
     checkAuth()
 
-    const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ? { id: session.user.id, email: session.user.email ?? null } : null)
-    })
+    const { data: sub } = supabase.auth.onAuthStateChange(
+      (_event: AuthChangeEvent, session: Session | null) => {
+        setUser(session?.user ? { id: session.user.id, email: session.user.email ?? null } : null)
+      }
+    )
     return () => sub.subscription.unsubscribe()
   }, [])
 
