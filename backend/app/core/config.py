@@ -54,3 +54,17 @@ def get_settings() -> Settings:
     supabase_jwt_secret: str = ""
     supabase_anon_key: str = ""
     database_url_async: str = ""
+
+
+from app.llm.client import LLMClient
+from app.llm.factory import build_llm_client
+
+
+def get_llm_client() -> LLMClient:
+    settings = get_settings()
+    return build_llm_client(
+        provider=settings.llm_provider,
+        api_key=settings.llm_api_key or None,
+        base_url=settings.llm_base_url or None,
+        model=settings.strong_model_name,
+    )
