@@ -29,3 +29,12 @@ def get_storage():
 
     def clear(self):
         pass
+
+
+def _add_clear():
+    def clear(self):
+        pass
+    Storage.clear = clear
+
+
+_add_clear()
