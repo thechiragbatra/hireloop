@@ -68,3 +68,4 @@ def get_llm_client() -> LLMClient:
         base_url=settings.llm_base_url or None,
         model=settings.strong_model_name,
     )
+    database_url_async: str = ""
