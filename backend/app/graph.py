@@ -50,7 +50,7 @@ def build_graph(
         content = state.get("content", b"")
         filename = state.get("filename", "resume.pdf")
         user_id = state.get("user_id")
-        profile, raw_text = await parser.parse(filename, content)
+        profile, raw_text = parser.parse(filename, content)
         profile_id = profile.id
         storage.save_profile(profile_id, raw_text, profile.model_dump(), user_id=user_id)
         return {
