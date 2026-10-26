@@ -60,3 +60,17 @@ def _add_methods():
 
 
 _add_methods()
+    def save_jobs(self, jobs):
+        return jobs
+
+
+_add_methods()
+
+
+def _add_methods2():
+    def save_jobs(self, jobs):
+        return jobs
+    Storage.save_jobs = save_jobs
+
+
+_add_methods2()
