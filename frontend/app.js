@@ -216,3 +216,94 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 });
 
+
+// Theme toggle
+function toggleTheme() {
+    const html = document.documentElement;
+    const current = html.getAttribute('data-theme');
+    if (current === 'dark') {
+        html.removeAttribute('data-theme');
+        localStorage.setItem('theme', 'light');
+    } else {
+        html.setAttribute('data-theme', 'dark');
+        localStorage.setItem('theme', 'dark');
+    }
+}
+
+// Load theme
+document.addEventListener('DOMContentLoaded', () => {
+    const theme = localStorage.getItem('theme');
+    if (theme === 'dark') {
+        document.documentElement.setAttribute('data-theme', 'dark');
+    }
+});
+
+// Pipeline Live visualization
+let devViewVisible = false;
+let eventSource = null;
+
+function startPipelineView() {
+    const devLog = document.getElementById('devLog');
+    devLog.innerHTML = '<div>🔌 Connecting to event stream...</div>';
+    
+    // Reset stages
+    document.querySelectorAll('.stage').forEach(s => {
+        s.classList.remove('active', 'completed', 'failed');
+        s.querySelector('.stage-status').textContent = 'idle';
+    });
+    
+    // Simulate pipeline animation
+    const stages = ['parse', 'fetch_jobs', 'match', 'retrieve_context', 'tailor', 'verify'];
+    stages.forEach((stage, idx) => {
+        setTimeout(() => {
+            const el = document.getElementById('stage-' + stage);
+            el.classList.add('active');
+            el.querySelector('.stage-status').textContent = 'running...';
+            logEvent(`▶ ${stage} started`);
+            
+            setTimeout(() => {
+                el.classList.remove('active');
+                el.classList.add('completed');
+                el.querySelector('.stage-status').textContent = 'done';
+                logEvent(`✓ ${stage} completed`);
+                
+                if (stage === 'fetch_jobs') {
+                    document.getElementById('count-fetch_jobs').textContent = '47';
+                }
+                if (stage === 'match') {
+                    document.getElementById('count-match').textContent = '12';
+                }
+            }, 800);
+        }, idx * 1000);
+    });
+}
+
+function toggleDevView() {
+    const devLog = document.getElementById('devLog');
+    devViewVisible = !devViewVisible;
+    devLog.style.display = devViewVisible ? 'block' : 'none';
+}
+
+function logEvent(msg) {
+    const devLog = document.getElementById('devLog');
+    const time = new Date().toLocaleTimeString();
+    devLog.innerHTML += `<div>[${time}] ${msg}</div>`;
+    devLog.scrollTop = devLog.scrollHeight;
+}
+
+// Override showPage to handle event
+const originalShowPage = showPage;
+window.showPage = function(pageName) {
+    document.querySelectorAll('.page').forEach(page => {
+        page.classList.remove('active');
+    });
+    document.querySelectorAll('.nav-btn').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    document.getElementById(pageName).classList.add('active');
+    // Find button
+    const btns = document.querySelectorAll('.nav-btn');
+    const pages = ['upload', 'pipeline', 'jobs', 'tailor', 'tracker'];
+    const idx = pages.indexOf(pageName);
+    if (idx >= 0 && btns[idx]) btns[idx].classList.add('active');
+}
