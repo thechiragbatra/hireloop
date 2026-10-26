@@ -43,3 +43,19 @@ graph TD
 - TTL deletion for raw files; "delete my account and data" endpoint
 
 **Note:** RAG is used for job retrieval and tailor grounding, but NOT for resume parsing (resume fits in context). No torch or cross-encoder in the production image (512 MB limit).
+
+## Event Flow (Pipeline Live)
+```mermaid
+sequenceDiagram
+    participant Client
+    participant API
+    participant LangGraph
+    participant EventStore
+    Client->>API: POST /pipeline (auth)
+    API->>LangGraph: Start run with run_id
+    LangGraph->>EventStore: Emit RunEvent per node (started/completed/failed)
+    Client->>API: GET /runs/{run_id}/events (SSE)
+    API->>EventStore: Stream events (replay + live)
+    EventStore-->>Client: SSE events (no PII)
+```
+**Note:** Events contain only counts, timings, IDs, and verdicts. No resume/profile text.
