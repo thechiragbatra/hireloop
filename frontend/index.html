@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HireLoop - AI Job Copilot</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🚀 HireLoop</h1>
+            <p>AI Job Copilot - Find, Tailor, Track</p>
+        </header>
+
+        <nav>
+            <button class="nav-btn active" onclick="showPage('upload')">Upload Resume</button>
+            <button class="nav-btn" onclick="showPage('jobs')">Find Jobs</button>
+            <button class="nav-btn" onclick="showPage('tailor')">Tailor Resume</button>
+            <button class="nav-btn" onclick="showPage('tracker')">Tracker</button>
+        </nav>
+
+        <main>
+            <!-- Upload Page -->
+            <section id="upload" class="page active">
+                <h2>Upload Your Resume</h2>
+                <div class="upload-area" id="uploadArea">
+                    <p>📄 Drop your resume here or click to browse</p>
+                    <p class="small">Supports PDF, DOCX</p>
+                    <input type="file" id="resumeFile" accept=".pdf,.docx,.doc" hidden>
+                </div>
+                <div id="uploadStatus"></div>
+                <div id="profileDisplay" class="hidden"></div>
+            </section>
+
+            <!-- Jobs Page -->
+            <section id="jobs" class="page">
+                <h2>Job Matches</h2>
+                <div class="filters">
+                    <input type="text" id="jobRole" placeholder="Job Role (e.g., Software Engineer)">
+                    <input type="text" id="jobLocation" placeholder="Location">
+                    <button onclick="fetchJobs()">Search Jobs</button>
+                </div>
+                <div id="jobsList"></div>
+            </section>
+
+            <!-- Tailor Page -->
+            <section id="tailor" class="page">
+                <h2>Tailor Resume</h2>
+                <p>Select a job from Matches to tailor your resume honestly</p>
+                <div id="tailorContent">
+                    <p class="empty">No job selected. Go to Jobs and select a match.</p>
+                </div>
+            </section>
+
+            <!-- Tracker Page -->
+            <section id="tracker" class="page">
+                <h2>Application Tracker</h2>
+                <button onclick="exportTracker()">Export to CSV</button>
+                <div id="trackerList"></div>
+            </section>
+        </main>
+
+        <footer>
+            <p>Privacy-first • No auto-submit • Honest tailoring only</p>
+        </footer>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
