@@ -1,4 +1,5 @@
 from functools import lru_cache
+from typing import List
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -11,9 +12,10 @@ class Settings(BaseSettings):
     app_port: int = 8000
     debug: bool = False
 
-    allowed_cors_origins: list[str] = ["http://localhost:5173", "http://localhost:3000"]
+    allowed_cors_origins: List[str] = ["http://localhost:5173", "http://localhost:3000"]
 
     database_url: str = "sqlite:///./data/hireloop.db"
+    database_url_async: str = ""
 
     resume_ttl_seconds: int = 3600
     max_upload_mb: int = 10
@@ -45,15 +47,13 @@ class Settings(BaseSettings):
     supabase_publishable_key: str = ""
     supabase_secret_key: str = ""
     supabase_jwks_url: str = ""
+    supabase_jwt_secret: str = ""
+    supabase_anon_key: str = ""
 
 
 @lru_cache
 def get_settings() -> Settings:
     return Settings()
-
-    supabase_jwt_secret: str = ""
-    supabase_anon_key: str = ""
-    database_url_async: str = ""
 
 
 from app.llm.client import LLMClient
@@ -68,4 +68,3 @@ def get_llm_client() -> LLMClient:
         base_url=settings.llm_base_url or None,
         model=settings.strong_model_name,
     )
-    database_url_async: str = ""
