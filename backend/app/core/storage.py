@@ -60,11 +60,6 @@ def _add_methods():
 
 
 _add_methods()
-    def save_jobs(self, jobs):
-        return jobs
-
-
-_add_methods()
 
 
 def _add_methods2():
