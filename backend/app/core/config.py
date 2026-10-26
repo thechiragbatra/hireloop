@@ -13,7 +13,7 @@ class Settings(BaseSettings):
 
     allowed_cors_origins: list[str] = ["http://localhost:5173", "http://localhost:3000"]
 
-    database_url: str = "sqlite:///./data/hireloop.db"
+    database_url: str = ""
     database_url_async: str = ""
 
     resume_ttl_seconds: int = 3600
@@ -52,7 +52,27 @@ class Settings(BaseSettings):
 
 @lru_cache
 def get_settings() -> Settings:
-    return Settings()
+    s = Settings()
+    if not s.database_url:
+        import os
+
+        url = os.getenv("DATABASE_URL", "")
+        if url:
+            if url.startswith("postgres://"):
+                url = url.replace("postgres://", "postgresql://", 1)
+            if url.startswith("postgresql://") and "+" not in url.split("://")[0]:
+                url = url.replace("postgresql://", "postgresql+psycopg2://", 1)
+            s.database_url = url
+        else:
+            s.database_url = "sqlite:///./app.db" if s.app_env != "production" else ""
+    else:
+        url = s.database_url
+        if url.startswith("postgres://"):
+            url = url.replace("postgres://", "postgresql://", 1)
+        if url.startswith("postgresql://") and "+" not in url.split("://")[0]:
+            url = url.replace("postgresql://", "postgresql+psycopg2://", 1)
+        s.database_url = url
+    return s
 
 
 def get_llm_client():
