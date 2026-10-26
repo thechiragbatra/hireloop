@@ -18,12 +18,10 @@ target_metadata = Base.metadata
 
 
 def get_url() -> str:
-    url = os.getenv("DATABASE_URL") or config.get_main_option("sqlalchemy.url")
-    if not url:
-        raise RuntimeError("DATABASE_URL is not set and no default found in alembic.ini")
+    url = os.environ.get("DATABASE_URL") or config.get_main_option("sqlalchemy.url") or "sqlite:////app/data/hireloop.db"
     if url.startswith("postgres://"):
-        url = url.replace("postgres://", "postgresql://", 1)
-    if url.startswith("postgresql://") and "+" not in url.split("://")[0]:
+        url = url.replace("postgres://", "postgresql+psycopg2://", 1)
+    elif url.startswith("postgresql://") and "+" not in url.split("://")[0]:
         url = url.replace("postgresql://", "postgresql+psycopg2://", 1)
     return url
 
@@ -44,8 +42,10 @@ def run_migrations_offline() -> None:
 def run_migrations_online() -> None:
     url = get_url()
     config.set_main_option("sqlalchemy.url", url)
+    section = config.get_section(config.config_ini_section, {})
+    section["sqlalchemy.url"] = url
     connectable = engine_from_config(
-        config.get_section(config.config_ini_section, {}),
+        section,
         prefix="sqlalchemy.",
         poolclass=pool.NullPool,
     )
