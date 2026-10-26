@@ -50,3 +50,7 @@ class Settings(BaseSettings):
 @lru_cache
 def get_settings() -> Settings:
     return Settings()
+
+    supabase_jwt_secret: str = ""
+    supabase_anon_key: str = ""
+    database_url_async: str = ""
