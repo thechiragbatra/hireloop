@@ -69,3 +69,12 @@ def _add_methods2():
 
 
 _add_methods2()
+
+
+def _add_methods3():
+    def get_profile(self, profile_id, user_id=None):
+        return None
+    Storage.get_profile = get_profile
+
+
+_add_methods3()
