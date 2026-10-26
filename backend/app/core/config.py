@@ -1,4 +1,5 @@
 from functools import lru_cache
+from typing import List
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -11,7 +12,7 @@ class Settings(BaseSettings):
     app_port: int = 8000
     debug: bool = False
 
-    allowed_cors_origins: list[str] = ["http://localhost:5173", "http://localhost:3000"]
+    allowed_cors_origins: List[str] = ["http://localhost:5173", "http://localhost:3000"]
 
     database_url: str = "sqlite:///./data/hireloop.db"
     database_url_async: str = ""
@@ -55,22 +56,7 @@ def get_settings() -> Settings:
     return Settings()
 
 
-from app.llm.client import LLMClient
-from app.llm.factory import build_llm_client
-
-
-def get_llm_client() -> LLMClient:
-    settings = get_settings()
-    return build_llm_client(
-        provider=settings.llm_provider,
-        api_key=settings.llm_api_key or None,
-        base_url=settings.llm_base_url or None,
-        model=settings.strong_model_name,
-    )
-
-
-def get_llm_client() -> "LLMClient":
-    from app.llm.client import LLMClient
+def get_llm_client():
     from app.llm.factory import build_llm_client
 
     settings = get_settings()
