@@ -1,7 +1,7 @@
-from fastapi import Depends, HTTPException, Request
-from typing import Optional
+
+from fastapi import Request
 
 
-def get_current_user(request: Request) -> Optional[dict]:
+def get_current_user(request: Request) -> dict | None:
     # Dev mode - no auth required
     return None
