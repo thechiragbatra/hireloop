@@ -11,19 +11,22 @@
         <header>
             <h1>🚀 HireLoop</h1>
             <p>AI Job Copilot - Find, Tailor, Track</p>
+            <button class="theme-toggle" onclick="toggleTheme()">🌓 Theme</button>
         </header>
 
         <nav>
-            <button class="nav-btn active" onclick="showPage('upload')">Upload Resume</button>
-            <button class="nav-btn" onclick="showPage('jobs')">Find Jobs</button>
-            <button class="nav-btn" onclick="showPage('tailor')">Tailor Resume</button>
+            <button class="nav-btn active" onclick="showPage('upload')">Upload & Run</button>
+            <button class="nav-btn" onclick="showPage('pipeline')">Pipeline Live</button>
+            <button class="nav-btn" onclick="showPage('jobs')">Jobs & Matches</button>
+            <button class="nav-btn" onclick="showPage('tailor')">Tailor</button>
             <button class="nav-btn" onclick="showPage('tracker')">Tracker</button>
         </nav>
 
         <main>
             <!-- Upload Page -->
             <section id="upload" class="page active">
-                <h2>Upload Your Resume</h2>
+                <h2>One-Click Automation</h2>
+                <p style="color:#666;margin-bottom:20px;">Upload resume → Parse → Fetch Jobs → Match → Tailor → Verify</p>
                 <div class="upload-area" id="uploadArea">
                     <p>📄 Drop your resume here or click to browse</p>
                     <p class="small">Supports PDF, DOCX</p>
@@ -31,6 +34,31 @@
                 </div>
                 <div id="uploadStatus"></div>
                 <div id="profileDisplay" class="hidden"></div>
+            </section>
+
+            <!-- Pipeline Live Page -->
+            <section id="pipeline" class="page">
+                <h2>Pipeline Live</h2>
+                <div style="display:flex;gap:10px;margin-bottom:15px;">
+                    <button onclick="startPipelineView()">Start Visualization</button>
+                    <button onclick="toggleDevView()">Toggle Dev Log</button>
+                </div>
+                <div id="pipelineViz" class="pipeline-container">
+                    <div class="pipeline-stages">
+                        <div class="stage" id="stage-parse">📄 Parse<div class="stage-status">idle</div></div>
+                        <div class="connector">→</div>
+                        <div class="stage" id="stage-fetch_jobs">🔍 Fetch Jobs<div class="stage-status">idle</div><div class="counter" id="count-fetch_jobs">0</div></div>
+                        <div class="connector">→</div>
+                        <div class="stage" id="stage-match">🎯 Match<div class="stage-status">idle</div><div class="counter" id="count-match">0</div></div>
+                        <div class="connector">→</div>
+                        <div class="stage" id="stage-retrieve_context">🧠 Retrieve<div class="stage-status">idle</div></div>
+                        <div class="connector">→</div>
+                        <div class="stage" id="stage-tailor">✍️ Tailor<div class="stage-status">idle</div></div>
+                        <div class="connector">→</div>
+                        <div class="stage" id="stage-verify">✅ Verify<div class="stage-status">idle</div></div>
+                    </div>
+                </div>
+                <div id="devLog" class="dev-log" style="display:none;"></div>
             </section>
 
             <!-- Jobs Page -->
@@ -47,9 +75,8 @@
             <!-- Tailor Page -->
             <section id="tailor" class="page">
                 <h2>Tailor Resume</h2>
-                <p>Select a job from Matches to tailor your resume honestly</p>
                 <div id="tailorContent">
-                    <p class="empty">No job selected. Go to Jobs and select a match.</p>
+                    <p class="empty">Run the pipeline to see tailored results with faithfulness checks.</p>
                 </div>
             </section>
 
