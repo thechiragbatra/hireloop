@@ -147,3 +147,15 @@ class Storage:
 
     def get_application(self, record_id, user_id=None):
         return self._apps.get(record_id)
+
+    def delete_application(self, record_id):
+        if record_id in self._apps:
+            del self._apps[record_id]
+            return True
+        return False
+
+    def delete_profile(self, profile_id):
+        if profile_id in self._profiles:
+            del self._profiles[profile_id]
+            return True
+        return False
