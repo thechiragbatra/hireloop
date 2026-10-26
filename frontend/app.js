@@ -1,4 +1,4 @@
-const API_URL = 'https://your-backend-url.onrender.com/api/v1'; // Update this
+const API_URL = 'https://hireloop-2.onrender.com/api/v1'; // Update this
 
 function showPage(pageName) {
     // Hide all pages

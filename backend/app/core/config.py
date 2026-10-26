@@ -11,7 +11,7 @@ class Settings(BaseSettings):
     app_port: int = 8000
     debug: bool = False
 
-    allowed_cors_origins: list[str] = ["http://localhost:5173", "http://localhost:3000"]
+    allowed_cors_origins: list[str] = ["http://localhost:5173", "http://localhost:3000", "https://thechiragbatra.github.io"]
 
     database_url: str = ""
     database_url_async: str = ""
