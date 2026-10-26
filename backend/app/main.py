@@ -37,3 +37,9 @@ async def root() -> dict:
 def _init_storage() -> None:
     storage = get_storage()
     storage.create_all()
+
+
+@app.on_event("startup")
+async def startup():
+    import os
+    os.makedirs("data", exist_ok=True)
