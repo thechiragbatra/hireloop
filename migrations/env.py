@@ -1,5 +1,6 @@
 """Alembic environment script for Hireloop backend."""
 
+import os
 from logging.config import fileConfig
 
 from alembic import context
@@ -17,9 +18,14 @@ target_metadata = Base.metadata
 
 
 def get_url() -> str:
-    import os
-
-    return os.getenv("DATABASE_URL", config.get_main_option("sqlalchemy.url"))
+    url = os.getenv("DATABASE_URL") or config.get_main_option("sqlalchemy.url")
+    if not url:
+        raise RuntimeError("DATABASE_URL is not set and no default found in alembic.ini")
+    if url.startswith("postgres://"):
+        url = url.replace("postgres://", "postgresql://", 1)
+    if url.startswith("postgresql://") and "+" not in url.split("://")[0]:
+        url = url.replace("postgresql://", "postgresql+psycopg2://", 1)
+    return url
 
 
 def run_migrations_offline() -> None:
@@ -36,8 +42,10 @@ def run_migrations_offline() -> None:
 
 
 def run_migrations_online() -> None:
+    url = get_url()
+    config.set_main_option("sqlalchemy.url", url)
     connectable = engine_from_config(
-        {"sqlalchemy.url": get_url()},
+        config.get_section(config.config_ini_section, {}),
         prefix="sqlalchemy.",
         poolclass=pool.NullPool,
     )
@@ -53,5 +61,3 @@ if context.is_offline_mode():
     run_migrations_offline()
 else:
     run_migrations_online()
-import os
-os.makedirs("data", exist_ok=True)
