@@ -47,3 +47,9 @@
 **Date:** 2025-10-25  
 **Decision:** Frontend uses React + Vite + TypeScript with HashRouter, deployed to GitHub Pages via GitHub Actions. Vite `base` set to repo name. API URL and Supabase public keys read from build-time env vars.  
 **Rationale:** GitHub Pages serves static files from a subdirectory; HashRouter avoids server-side routing issues.
+
+## ADR-006: SSE over WebSockets
+**Status:** Accepted  
+**Date:** 2025-10-26  
+**Decision:** Use Server-Sent Events (SSE) for pipeline live visualization.  
+**Rationale:** Simpler one-way streaming, easier to work with HTTP/proxies, supports auto-reconnect, and auth via headers with fetch-event-source.
