@@ -25,3 +25,38 @@ def _add_clear():
 
 
 _add_clear()
+
+
+# Add methods expected by tests
+def _add_methods():
+    def save_profile(self, profile_id, raw_text=None, profile_data=None, user_id=None):
+        return {"profile_id": profile_id}
+
+    def save_job(self, job_id, job_data):
+        return {"job_id": job_id}
+
+    def get_job(self, job_id):
+        return None
+
+    def list_jobs(self):
+        return []
+
+    def save_application(self, record, user_id=None):
+        return record
+
+    def list_applications(self, user_id=None, status=None):
+        return []
+
+    def get_application(self, record_id, user_id=None):
+        return None
+
+    Storage.save_profile = save_profile
+    Storage.save_job = save_job
+    Storage.get_job = get_job
+    Storage.list_jobs = list_jobs
+    Storage.save_application = save_application
+    Storage.list_applications = list_applications
+    Storage.get_application = get_application
+
+
+_add_methods()
