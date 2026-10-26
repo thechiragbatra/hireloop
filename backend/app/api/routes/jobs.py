@@ -10,15 +10,23 @@ router = APIRouter()
 @router.post("/jobs")
 async def fetch_jobs(filters: dict[str, Any] | None = None):
     filters = filters or {}
-    adapter = ADAPTERS.get("remoteok")
-    if not adapter:
-        return {"jobs": []}
-    jobs = await adapter.fetch(filters)
-    # Add simple match scores
-    result = []
-    for job in jobs:
-        result.append({
+    all_jobs = []
+    for name, adapter in ADAPTERS.items():
+        try:
+            jobs = await adapter.fetch(filters)
+            all_jobs.extend(jobs)
+        except Exception:
+            continue
+    # Deduplicate by title+company
+    seen = set()
+    unique = []
+    for job in all_jobs:
+        key = (job.title.lower(), job.company.lower())
+        if key in seen:
+            continue
+        seen.add(key)
+        unique.append({
             **job.model_dump(),
-            "match_score": 75 + hash(job.id) % 20
+            "match_score": 75 + hash(job.id) % 25
         })
-    return {"jobs": result}
+    return {"jobs": unique[:100]}
