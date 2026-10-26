@@ -1,6 +1,7 @@
+import io
+
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import StreamingResponse
-import io
 
 from ...models.schemas import ApplicationRecord
 from ...services.tracker import TrackerService

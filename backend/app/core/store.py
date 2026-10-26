@@ -1,8 +1,7 @@
-from typing import Dict
 
 from ..models.schemas import Profile
 
-_profiles: Dict[str, Profile] = {}
+_profiles: dict[str, Profile] = {}
 
 
 def save_profile(profile: Profile) -> None:
