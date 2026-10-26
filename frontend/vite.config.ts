@@ -3,7 +3,7 @@ import react from "@vitejs/plugin-react"
 import path from "path"
 
 // GitHub Pages deployment: base is repo name
-const BASE = process.env.VITE_BASE || "/hireloop-1/"
+const BASE = process.env.VITE_BASE || "/hireloop/"
 
 export default defineConfig({
   plugins: [react()],
