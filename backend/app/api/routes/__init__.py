@@ -11,3 +11,6 @@ api_router.include_router(tailor.router, tags=["tailor"])
 api_router.include_router(tracker.router, tags=["tracker"])
 api_router.include_router(pipeline.router, tags=["pipeline"])
 api_router.include_router(apply_kit.router, tags=["apply-kit"])
+from . import runs
+
+api_router.include_router(runs.router, tags=["runs"])
