@@ -3,95 +3,60 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HireLoop - AI Job Copilot</title>
+    <title>HireLoop</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div class="container">
-        <header>
-            <h1>🚀 HireLoop</h1>
-            <p>AI Job Copilot - Find, Tailor, Track</p>
-            <button class="theme-toggle" onclick="toggleTheme()">🌓 Theme</button>
-        </header>
+    <nav class="nav">
+        <div class="nav-container">
+            <div class="nav-logo">HireLoop</div>
+            <div class="nav-links">
+                <button class="nav-link active" data-page="home">Home</button>
+                <button class="nav-link" data-page="jobs">Jobs</button>
+                <button class="nav-link" data-page="tracker">Tracker</button>
+            </div>
+        </div>
+    </nav>
 
-        <nav>
-            <button class="nav-btn active" onclick="showPage('upload')">Upload & Run</button>
-            <button class="nav-btn" onclick="showPage('pipeline')">Pipeline Live</button>
-            <button class="nav-btn" onclick="showPage('jobs')">Jobs & Matches</button>
-            <button class="nav-btn" onclick="showPage('tailor')">Tailor</button>
-            <button class="nav-btn" onclick="showPage('tracker')">Tracker</button>
-        </nav>
-
-        <main>
-            <!-- Upload Page -->
-            <section id="upload" class="page active">
-                <h2>One-Click Automation</h2>
-                <p style="color:#666;margin-bottom:20px;">Upload resume → Parse → Fetch Jobs → Match → Tailor → Verify</p>
-                <div class="upload-area" id="uploadArea">
-                    <p>📄 Drop your resume here or click to browse</p>
-                    <p class="small">Supports PDF, DOCX</p>
+    <main>
+        <!-- Home -->
+        <section id="home" class="page active">
+            <div class="hero">
+                <h1 class="hero-title">Find your next role.<br>Tailor with precision.</h1>
+                <p class="hero-subtitle">Upload your resume and get matched to real opportunities in one click.</p>
+                <div class="upload-zone" id="uploadZone">
+                    <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
+                        <path d="M24 16v16M16 24h16M12 8h24a4 4 0 014 4v24a4 4 0 01-4 4H12a4 4 0 01-4-4V12a4 4 0 014-4z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                    </svg>
+                    <p class="upload-text">Drop resume here or <span class="upload-link">browse</span></p>
+                    <p class="upload-subtext">PDF or DOCX</p>
                     <input type="file" id="resumeFile" accept=".pdf,.docx,.doc" hidden>
                 </div>
-                <div id="uploadStatus"></div>
-                <div id="profileDisplay" class="hidden"></div>
-            </section>
+                <div id="status" class="status"></div>
+            </div>
+        </section>
 
-            <!-- Pipeline Live Page -->
-            <section id="pipeline" class="page">
-                <h2>Pipeline Live</h2>
-                <div style="display:flex;gap:10px;margin-bottom:15px;">
-                    <button onclick="startPipelineView()">Start Visualization</button>
-                    <button onclick="toggleDevView()">Toggle Dev Log</button>
-                </div>
-                <div id="pipelineViz" class="pipeline-container">
-                    <div class="pipeline-stages">
-                        <div class="stage" id="stage-parse">📄 Parse<div class="stage-status">idle</div></div>
-                        <div class="connector">→</div>
-                        <div class="stage" id="stage-fetch_jobs">🔍 Fetch Jobs<div class="stage-status">idle</div><div class="counter" id="count-fetch_jobs">0</div></div>
-                        <div class="connector">→</div>
-                        <div class="stage" id="stage-match">🎯 Match<div class="stage-status">idle</div><div class="counter" id="count-match">0</div></div>
-                        <div class="connector">→</div>
-                        <div class="stage" id="stage-retrieve_context">🧠 Retrieve<div class="stage-status">idle</div></div>
-                        <div class="connector">→</div>
-                        <div class="stage" id="stage-tailor">✍️ Tailor<div class="stage-status">idle</div></div>
-                        <div class="connector">→</div>
-                        <div class="stage" id="stage-verify">✅ Verify<div class="stage-status">idle</div></div>
-                    </div>
-                </div>
-                <div id="devLog" class="dev-log" style="display:none;"></div>
-            </section>
+        <!-- Jobs -->
+        <section id="jobs" class="page">
+            <div class="page-header">
+                <h2 class="page-title">Jobs</h2>
+                <button class="btn" onclick="loadJobs()">Refresh</button>
+            </div>
+            <div id="jobsGrid" class="jobs-grid"></div>
+        </section>
 
-            <!-- Jobs Page -->
-            <section id="jobs" class="page">
-                <h2>Job Matches</h2>
-                <div class="filters">
-                    <input type="text" id="jobRole" placeholder="Job Role (e.g., Software Engineer)">
-                    <input type="text" id="jobLocation" placeholder="Location">
-                    <button onclick="fetchJobs()">Search Jobs</button>
-                </div>
-                <div id="jobsList"></div>
-            </section>
-
-            <!-- Tailor Page -->
-            <section id="tailor" class="page">
-                <h2>Tailor Resume</h2>
-                <div id="tailorContent">
-                    <p class="empty">Run the pipeline to see tailored results with faithfulness checks.</p>
-                </div>
-            </section>
-
-            <!-- Tracker Page -->
-            <section id="tracker" class="page">
-                <h2>Application Tracker</h2>
-                <button onclick="exportTracker()">Export to CSV</button>
-                <div id="trackerList"></div>
-            </section>
-        </main>
-
-        <footer>
-            <p>Privacy-first • No auto-submit • Honest tailoring only</p>
-        </footer>
-    </div>
+        <!-- Tracker -->
+        <section id="tracker" class="page">
+            <div class="page-header">
+                <h2 class="page-title">Tracker</h2>
+                <button class="btn btn-secondary" onclick="exportTracker()">Export CSV</button>
+            </div>
+            <div id="trackerList" class="tracker-list"></div>
+        </section>
+    </main>
 
     <script src="app.js"></script>
 </body>
