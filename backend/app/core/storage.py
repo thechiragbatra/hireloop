@@ -78,3 +78,12 @@ def _add_methods3():
 
 
 _add_methods3()
+
+
+def _add_methods4():
+    def create_all(self):
+        pass
+    Storage.create_all = create_all
+
+
+_add_methods4()
