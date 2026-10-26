@@ -159,3 +159,13 @@ class Storage:
             del self._profiles[profile_id]
             return True
         return False
+
+
+# For alembic
+try:
+    from sqlalchemy.orm import DeclarativeBase
+
+    class Base(DeclarativeBase):
+        pass
+except Exception:
+    Base = object
