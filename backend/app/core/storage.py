@@ -26,3 +26,6 @@ def get_storage():
     if _storage is None:
         _storage = Storage()
     return _storage
+
+    def clear(self):
+        pass
