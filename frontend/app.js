@@ -1,309 +1,97 @@
-const API_URL = 'https://hireloop-2.onrender.com/api/v1'; // Backend URL
+const API_URL = 'https://hireloop-2.onrender.com/api/v1';
 
 function showPage(pageName) {
-    // Hide all pages
-    document.querySelectorAll('.page').forEach(page => {
-        page.classList.remove('active');
-    });
-    // Remove active from all nav buttons
-    document.querySelectorAll('.nav-btn').forEach(btn => {
-        btn.classList.remove('active');
-    });
-    // Show selected page
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.nav-link').forEach(b => b.classList.remove('active'));
     document.getElementById(pageName).classList.add('active');
-    // Activate selected nav button
-    if (event && event.target) {
-        event.target.classList.add('active');
-    }
+    document.querySelector(`.nav-link[data-page="${pageName}"]`).classList.add('active');
 }
 
-// Upload functionality - ONE CLICK AUTOMATION
-const uploadArea = document.getElementById('uploadArea');
+document.querySelectorAll('.nav-link').forEach(btn => {
+    btn.addEventListener('click', () => showPage(btn.dataset.page));
+});
+
+// Upload
+const uploadZone = document.getElementById('uploadZone');
 const fileInput = document.getElementById('resumeFile');
-const uploadStatus = document.getElementById('uploadStatus');
-const profileDisplay = document.getElementById('profileDisplay');
+const status = document.getElementById('status');
 
-uploadArea.addEventListener('click', () => {
-    fileInput.click();
-});
-
-uploadArea.addEventListener('dragover', (e) => {
+uploadZone.addEventListener('click', () => fileInput.click());
+uploadZone.addEventListener('dragover', e => { e.preventDefault(); uploadZone.style.borderColor = 'var(--accent)'; });
+uploadZone.addEventListener('dragleave', () => { uploadZone.style.borderColor = 'var(--border)'; });
+uploadZone.addEventListener('drop', e => {
     e.preventDefault();
-    uploadArea.style.background = '#e8eaff';
+    uploadZone.style.borderColor = 'var(--border)';
+    if (e.dataTransfer.files.length) uploadResume(e.dataTransfer.files[0]);
+});
+fileInput.addEventListener('change', e => {
+    if (e.target.files.length) uploadResume(e.target.files[0]);
 });
 
-uploadArea.addEventListener('dragleave', () => {
-    uploadArea.style.background = '#f8f9ff';
-});
-
-uploadArea.addEventListener('drop', (e) => {
-    e.preventDefault();
-    uploadArea.style.background = '#f8f9ff';
-    const files = e.dataTransfer.files;
-    if (files.length > 0) {
-        runFullPipeline(files[0]);
-    }
-});
-
-fileInput.addEventListener('change', (e) => {
-    if (e.target.files.length > 0) {
-        runFullPipeline(e.target.files[0]);
-    }
-});
-
-async function runFullPipeline(file) {
+async function uploadResume(file) {
     const formData = new FormData();
     formData.append('file', file);
-    
-    uploadStatus.innerHTML = '<p>🚀 Running full pipeline...</p><p style="font-size:0.9em;color:#666;">Parsing → Fetching jobs → Matching → Tailoring → Verifying</p>';
-    uploadStatus.className = '';
-    
+    status.textContent = 'Processing your resume...';
     try {
-        const response = await fetch(`${API_URL}/pipeline`, {
-            method: 'POST',
-            body: formData
-        });
-        
-        if (response.ok) {
-            const data = await response.json();
-            uploadStatus.innerHTML = '<p>✅ Done! Found ' + data.jobs_count + ' jobs, matched ' + (data.matches?.length || 0) + '</p>';
-            uploadStatus.className = 'success';
-            
-            profileDisplay.classList.remove('hidden');
-            profileDisplay.innerHTML = `
-                <h3 style="margin-top: 20px; color: #333;">Pipeline Complete</h3>
-                <p><strong>Profile ID:</strong> ${data.profile_id}</p>
-                <p><strong>Jobs Found:</strong> ${data.jobs_count}</p>
-                <p><strong>Matches:</strong> ${data.matches?.length || 0}</p>
-                <button onclick="showJobs()" style="margin-top:10px;">View Jobs & Matches</button>
-            `;
-            
-            // Store results
-            window.pipelineResults = data;
+        const res = await fetch(`${API_URL}/upload`, { method: 'POST', body: formData });
+        if (res.ok) {
+            const data = await res.json();
+            status.textContent = 'Resume uploaded. Finding jobs...';
+            await loadJobs();
+            showPage('jobs');
         } else {
-            uploadStatus.innerHTML = '<p>❌ Pipeline failed</p>';
-            uploadStatus.className = 'error';
+            status.textContent = 'Upload failed';
         }
-    } catch (error) {
-        uploadStatus.innerHTML = '<p>❌ Error: ' + error.message + '</p>';
-        uploadStatus.className = 'error';
+    } catch (e) {
+        status.textContent = 'Error: ' + e.message;
     }
 }
 
-function showJobs() {
-    showPage('jobs');
-    document.querySelectorAll('.nav-btn').forEach((btn, idx) => {
-        btn.classList.toggle('active', idx === 1);
-    });
-    const jobsList = document.getElementById('jobsList');
-    if (window.pipelineResults && window.pipelineResults.matches) {
-        jobsList.innerHTML = window.pipelineResults.matches.slice(0, 20).map(match => `
-            <div class="job-card">
-                <h3>${match.job?.title || 'Job'}</h3>
-                <p class="company">${match.job?.company || ''}</p>
-                <p>📍 ${match.job?.location || 'Remote'}</p>
-                <span class="match-score">Match: ${match.score || 0}%</span>
-                <p style="margin:10px 0;color:#666;font-size:0.9em;">${(match.reasons || []).join(' • ')}</p>
-                <button onclick="selectJobFromMatch('${match.job?.id}')">Tailor Resume</button>
-            </div>
-        `).join('');
-    } else {
-        jobsList.innerHTML = '<p class="empty">No matches yet. Run pipeline by uploading resume.</p>';
-    }
-}
-
-function selectJobFromMatch(jobId) {
-    showPage('tailor');
-    document.querySelectorAll('.nav-btn').forEach((btn, idx) => {
-        btn.classList.toggle('active', idx === 2);
-    });
-    document.getElementById('tailorContent').innerHTML = `
-        <p>✅ Job selected. Resume tailored with faithfulness checks.</p>
-        <p style="color: #666; margin-top: 10px;">Every bullet traces to source facts only. No fabrication.</p>
-        <div style="margin-top:15px;padding:15px;background:#f0f2ff;border-radius:8px;">
-            <strong>Faithfulness Score:</strong> <span style="color:#2e7d32;">95%</span><br>
-            <strong>Keyword Coverage:</strong> <span style="color:#667eea;">Good</span>
-        </div>
-    `;
-}
-
-// Jobs functionality
-async function fetchJobs() {
-    const role = document.getElementById('jobRole').value;
-    const location = document.getElementById('jobLocation').value;
-    const jobsList = document.getElementById('jobsList');
-    
-    jobsList.innerHTML = '<p>⏳ Searching jobs...</p>';
-    
+async function loadJobs() {
+    const grid = document.getElementById('jobsGrid');
+    grid.innerHTML = '<p style="padding:24px;color:var(--text-secondary);">Loading...</p>';
     try {
-        const response = await fetch(`${API_URL}/jobs`, {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ role, location, limit: 50 })
-        });
-        
-        if (response.ok) {
-            const data = await response.json();
-            if (data.jobs && data.jobs.length > 0) {
-                jobsList.innerHTML = data.jobs.map(job => `
-                    <div class="job-card">
-                        <h3>${job.title}</h3>
-                        <p class="company">${job.company}</p>
-                        <p>📍 ${job.location || 'Remote'} • ${job.source}</p>
-                        <span class="match-score">Score: ${job.match_score || 75}%</span>
-                        <button onclick="selectJob('${job.id}')">Select</button>
+        const res = await fetch(`${API_URL}/jobs`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: '{}' });
+        const data = await res.json();
+        if (data.jobs && data.jobs.length) {
+            grid.innerHTML = data.jobs.slice(0, 30).map(job => `
+                <div class="job-card">
+                    <div class="job-title">${escapeHtml(job.title)}</div>
+                    <div class="job-company">${escapeHtml(job.company)}</div>
+                    <div class="job-meta">
+                        <span>${escapeHtml(job.location || 'Remote')}</span>
+                        <span>•</span>
+                        <span>${job.source}</span>
                     </div>
-                `).join('');
-            } else {
-                jobsList.innerHTML = '<p class="empty">No jobs found.</p>';
-            }
+                    <span class="job-badge">${job.match_score}% match</span>
+                </div>
+            `).join('');
         } else {
-            jobsList.innerHTML = '<p class="error">Failed to fetch jobs</p>';
+            grid.innerHTML = '<p style="padding:24px;color:var(--text-secondary);">No jobs found</p>';
         }
-    } catch (error) {
-        jobsList.innerHTML = '<p class="error">Error: ' + error.message + '</p>';
+    } catch (e) {
+        grid.innerHTML = '<p style="padding:24px;color:var(--text-secondary);">Error loading jobs</p>';
     }
 }
 
-function selectJob(jobId) {
-    showPage('tailor');
-    document.querySelectorAll('.nav-btn').forEach((btn, idx) => {
-        if (idx === 2) btn.classList.add('active');
-    });
-    document.getElementById('tailorContent').innerHTML = `
-        <p>✅ Job selected. Use "Upload Resume" for full automated tailoring.</p>
-    `;
-}
-
-// Tracker functionality
 async function exportTracker() {
     try {
-        const response = await fetch(`${API_URL}/tracker/export?format=csv`);
-        if (response.ok) {
-            const blob = await response.blob();
+        const res = await fetch(`${API_URL}/tracker/export?format=csv`);
+        if (res.ok) {
+            const blob = await res.blob();
             const url = window.URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = 'tracker.csv';
+            a.download = 'applications.csv';
             a.click();
         }
-    } catch (error) {
-        alert('Export failed: ' + error.message);
-    }
+    } catch (e) {}
 }
 
-// Load tracker on page load
-document.addEventListener('DOMContentLoaded', async () => {
-    try {
-        const response = await fetch(`${API_URL}/tracker`);
-        if (response.ok) {
-            const data = await response.json();
-            const trackerList = document.getElementById('trackerList');
-            if (data.items && data.items.length > 0) {
-                trackerList.innerHTML = data.items.map(item => `
-                    <div class="tracker-card">
-                        <h3>${item.role} at ${item.company}</h3>
-                        <p>Status: <strong>${item.status}</strong></p>
-                        <p>Match Score: ${item.match_score}%</p>
-                    </div>
-                `).join('');
-            } else {
-                trackerList.innerHTML = '<p class="empty">No applications yet. Upload resume to start!</p>';
-            }
-        }
-    } catch (error) {
-        document.getElementById('trackerList').innerHTML = '<p class="empty">Backend connected</p>';
-    }
-});
-
-
-// Theme toggle
-function toggleTheme() {
-    const html = document.documentElement;
-    const current = html.getAttribute('data-theme');
-    if (current === 'dark') {
-        html.removeAttribute('data-theme');
-        localStorage.setItem('theme', 'light');
-    } else {
-        html.setAttribute('data-theme', 'dark');
-        localStorage.setItem('theme', 'dark');
-    }
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text || '';
+    return div.innerHTML;
 }
 
-// Load theme
-document.addEventListener('DOMContentLoaded', () => {
-    const theme = localStorage.getItem('theme');
-    if (theme === 'dark') {
-        document.documentElement.setAttribute('data-theme', 'dark');
-    }
-});
-
-// Pipeline Live visualization
-let devViewVisible = false;
-let eventSource = null;
-
-function startPipelineView() {
-    const devLog = document.getElementById('devLog');
-    devLog.innerHTML = '<div>🔌 Connecting to event stream...</div>';
-    
-    // Reset stages
-    document.querySelectorAll('.stage').forEach(s => {
-        s.classList.remove('active', 'completed', 'failed');
-        s.querySelector('.stage-status').textContent = 'idle';
-    });
-    
-    // Simulate pipeline animation
-    const stages = ['parse', 'fetch_jobs', 'match', 'retrieve_context', 'tailor', 'verify'];
-    stages.forEach((stage, idx) => {
-        setTimeout(() => {
-            const el = document.getElementById('stage-' + stage);
-            el.classList.add('active');
-            el.querySelector('.stage-status').textContent = 'running...';
-            logEvent(`▶ ${stage} started`);
-            
-            setTimeout(() => {
-                el.classList.remove('active');
-                el.classList.add('completed');
-                el.querySelector('.stage-status').textContent = 'done';
-                logEvent(`✓ ${stage} completed`);
-                
-                if (stage === 'fetch_jobs') {
-                    document.getElementById('count-fetch_jobs').textContent = '47';
-                }
-                if (stage === 'match') {
-                    document.getElementById('count-match').textContent = '12';
-                }
-            }, 800);
-        }, idx * 1000);
-    });
-}
-
-function toggleDevView() {
-    const devLog = document.getElementById('devLog');
-    devViewVisible = !devViewVisible;
-    devLog.style.display = devViewVisible ? 'block' : 'none';
-}
-
-function logEvent(msg) {
-    const devLog = document.getElementById('devLog');
-    const time = new Date().toLocaleTimeString();
-    devLog.innerHTML += `<div>[${time}] ${msg}</div>`;
-    devLog.scrollTop = devLog.scrollHeight;
-}
-
-// Override showPage to handle event
-const originalShowPage = showPage;
-window.showPage = function(pageName) {
-    document.querySelectorAll('.page').forEach(page => {
-        page.classList.remove('active');
-    });
-    document.querySelectorAll('.nav-btn').forEach(btn => {
-        btn.classList.remove('active');
-    });
-    document.getElementById(pageName).classList.add('active');
-    // Find button
-    const btns = document.querySelectorAll('.nav-btn');
-    const pages = ['upload', 'pipeline', 'jobs', 'tailor', 'tracker'];
-    const idx = pages.indexOf(pageName);
-    if (idx >= 0 && btns[idx]) btns[idx].classList.add('active');
-}
+loadJobs();
