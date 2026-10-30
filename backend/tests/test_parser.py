@@ -1,6 +1,6 @@
 import io
 
-import anyio
+import pytest
 from docx import Document
 from pypdf import PdfWriter
 
@@ -26,24 +26,20 @@ def _make_pdf() -> bytes:
 def test_parse_docx_returns_profile_and_text():
     parser = ResumeParser()
     content = _make_docx("Hello World")
-    profile, raw_text = anyio.run(parser.parse, "resume.docx", content)
+    profile, raw_text = parser.parse("resume.docx", content)
     assert profile.id
     assert profile.skills == []
     assert raw_text == "Hello World"
 
 
-def test_parse_pdf_round_trip():
+def test_parse_blank_pdf_requires_readable_text():
     parser = ResumeParser()
     content = _make_pdf()
-    profile, raw_text = anyio.run(parser.parse, "resume.pdf", content)
-    assert profile.id
-    assert isinstance(raw_text, str)
+    with pytest.raises(ValueError, match="No readable text"):
+        parser.parse("resume.pdf", content)
 
 
 def test_parse_unsupported_type_raises():
     parser = ResumeParser()
-    try:
-        anyio.run(parser.parse, "resume.txt", b"hello")
-    except ValueError:
-        return
-    raise AssertionError("Expected ValueError for unsupported file type")
+    with pytest.raises(ValueError, match="Unsupported file type"):
+        parser.parse("resume.txt", b"hello")

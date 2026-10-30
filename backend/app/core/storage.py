@@ -5,6 +5,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
+from fastapi.encoders import jsonable_encoder
 from sqlalchemy import JSON, String, create_engine, delete, select
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, sessionmaker
 from sqlalchemy.pool import StaticPool
@@ -45,12 +46,14 @@ class Storage:
                 options["poolclass"] = StaticPool
         self.engine = create_engine(database_url, **options)
         self._sessions = sessionmaker(self.engine, expire_on_commit=False)
+        Base.metadata.create_all(self.engine)
 
     def create_all(self) -> None:
         Base.metadata.create_all(self.engine)
 
     def _put(self, kind: str, record_id: str, payload: dict[str, Any], owner_id: str | None):
         owner = owner_id or "local"
+        payload = jsonable_encoder(payload)
         with self._sessions() as session:
             row = session.get(StoredRecord, record_id)
             if row and (row.kind != kind or row.owner_id != owner):

@@ -1,10 +1,6 @@
-import anyio
-
 from app.services.job_sources import ADAPTERS
 
 
-def test_adapters_return_empty():
-    for name, adapter in ADAPTERS.items():
-        jobs = anyio.run(adapter.fetch, {})
-        assert jobs == []
-    assert set(ADAPTERS) == {"greenhouse", "lever", "ashby", "adzuna", "remoteok", "custom"}
+def test_adapter_registry_uses_current_public_sources():
+    assert set(ADAPTERS) == {"remoteok", "weworkremotely", "jobicy", "himalayas"}
+    assert all(callable(adapter.fetch) for adapter in ADAPTERS.values())

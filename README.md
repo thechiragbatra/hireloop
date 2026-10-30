@@ -70,7 +70,7 @@ In GitHub repository Settings → Pages, select GitHub Actions. Add these reposi
 | `SUPABASE_URL` | Supabase project URL |
 | `SUPABASE_ANON_KEY` | Supabase public anon/publishable key |
 
-Push the desired branch to `main`. The Pages workflow writes `frontend/config.js` during deployment and publishes the static site. It fails early if a required variable is missing. The public anon key is expected to be visible in the browser; never put a database password, Supabase service-role key, or LLM key in frontend variables.
+Push the desired branch to `main`. Once all three variables are present, the Pages workflow writes `frontend/config.js` during deployment and publishes the static site; until then, the deployment job is skipped. The public anon key is expected to be visible in the browser; never put a database password, Supabase service-role key, or LLM key in frontend variables.
 
 ### 4. Check the live flow
 

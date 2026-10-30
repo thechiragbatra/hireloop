@@ -1,9 +1,9 @@
 from functools import lru_cache
+from typing import Any, cast
 
 import jwt
 from fastapi import HTTPException, Request
 from jwt import PyJWKClient
-from jwt.types import Options
 
 from app.core.config import get_settings
 
@@ -47,7 +47,7 @@ def get_current_user(request: Request) -> dict:
                 settings.supabase_url.rstrip("/") + "/auth/v1/.well-known/jwks.json"
             )
             signing_key = _jwks_client(jwks_url).get_signing_key_from_jwt(token).key
-            options: Options = {"verify_aud": bool(settings.supabase_url)}
+            options = cast(Any, {"verify_aud": bool(settings.supabase_url)})
             claims = jwt.decode(
                 token,
                 signing_key,
