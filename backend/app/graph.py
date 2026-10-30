@@ -1,3 +1,4 @@
+import asyncio
 from typing import Any, TypedDict
 
 from langgraph.graph import END, StateGraph
@@ -52,7 +53,9 @@ def build_graph(
         user_id = state.get("user_id")
         profile, raw_text = parser.parse(filename, content)
         profile_id = profile.id
-        storage.save_profile(profile_id, raw_text, profile.model_dump(), user_id=user_id)
+        storage.save_profile(
+            profile_id, profile_data=profile.model_dump(mode="json"), user_id=user_id
+        )
         return {
             "profile_id": profile_id,
             "user_id": user_id,
@@ -76,9 +79,14 @@ def build_graph(
             except Exception:
                 pass
         fetched: list[dict] = []
-        for adapter in ADAPTERS.values():
-            jobs = await adapter.fetch(filters)
-            fetched.extend([j.model_dump() for j in jobs])
+        responses = await asyncio.gather(
+            *(adapter.fetch(filters) for adapter in ADAPTERS.values()),
+            return_exceptions=True,
+        )
+        for jobs in responses:
+            if isinstance(jobs, BaseException):
+                continue
+            fetched.extend([job.model_dump(mode="json") for job in jobs])
         storage.save_jobs(fetched, user_id=user_id)
         return {"jobs": fetched, "user_id": user_id, "status": "jobs_fetched"}
 
@@ -98,7 +106,14 @@ def build_graph(
 
     async def node_retrieve_context(state: PipelineState) -> PipelineState:
         profile = state.get("profile")
-        job = state.get("selected_job") or (state.get("jobs") or [{}])[0]
+        jobs = state.get("jobs", [])
+        job = state.get("selected_job")
+        if not job and jobs:
+            matches = state.get("matches", [])
+            best_match = max(matches, key=lambda item: item.get("score", 0), default={})
+            job = next(
+                (item for item in jobs if item.get("id") == best_match.get("job_id")), jobs[0]
+            )
         user_id = state.get("user_id")
         if not profile or not job:
             return {"retrieved_chunks": [], "user_id": user_id, "status": "nothing_to_retrieve"}
@@ -117,7 +132,13 @@ def build_graph(
         profile = state.get("profile")
         jobs = state.get("jobs", [])
         user_id = state.get("user_id")
-        job = state.get("selected_job") or (jobs[0] if jobs else None)
+        job = state.get("selected_job")
+        if not job and jobs:
+            matches = state.get("matches", [])
+            best_match = max(matches, key=lambda item: item.get("score", 0), default={})
+            job = next(
+                (item for item in jobs if item.get("id") == best_match.get("job_id")), jobs[0]
+            )
         if not profile or job is None:
             return {"tailored": None, "user_id": user_id, "status": "no_jobs"}
         from app.models.schemas import Profile as ProfileSchema

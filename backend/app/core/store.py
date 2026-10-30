@@ -1,4 +1,3 @@
-
 from ..models.schemas import Profile
 
 _profiles: dict[str, Profile] = {}

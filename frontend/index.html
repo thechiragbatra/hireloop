@@ -18,24 +18,44 @@
                 <button class="nav-link" data-page="jobs">Jobs</button>
                 <button class="nav-link" data-page="tracker">Tracker</button>
             </div>
+            <button class="btn btn-secondary" id="signOutButton" hidden>Sign out</button>
         </div>
     </nav>
 
-    <main>
+    <section id="authPanel" class="auth-panel" hidden>
+        <h1>Welcome to HireLoop</h1>
+        <p>Sign in to keep your resume and applications private.</p>
+        <form id="authForm">
+            <label>Email<input id="authEmail" type="email" autocomplete="email" required></label>
+            <label>Password<input id="authPassword" type="password" autocomplete="current-password" minlength="8" required></label>
+            <div class="auth-actions">
+                <button class="btn" type="submit" data-auth-mode="signin">Sign in</button>
+                <button class="btn btn-secondary" type="button" id="signupButton">Create account</button>
+            </div>
+            <button class="btn google-button" type="button" id="googleSignInButton">Continue with Google</button>
+            <div id="authStatus" class="status" role="status"></div>
+        </form>
+    </section>
+
+    <main id="appShell">
         <!-- Home -->
         <section id="home" class="page active">
             <div class="hero">
                 <h1 class="hero-title">Find your next role.<br>Tailor with precision.</h1>
                 <p class="hero-subtitle">Upload your resume and get matched to real opportunities in one click.</p>
-                <div class="upload-zone" id="uploadZone">
+                <div class="upload-zone" id="uploadZone" role="button" tabindex="0" aria-label="Choose or drop a PDF or DOCX resume">
                     <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
                         <path d="M24 16v16M16 24h16M12 8h24a4 4 0 014 4v24a4 4 0 01-4 4H12a4 4 0 01-4-4V12a4 4 0 014-4z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
                     </svg>
                     <p class="upload-text">Drop resume here or <span class="upload-link">browse</span></p>
                     <p class="upload-subtext">PDF or DOCX</p>
-                    <input type="file" id="resumeFile" accept=".pdf,.docx,.doc" hidden>
+                    <input type="file" id="resumeFile" accept=".pdf,.docx" hidden>
                 </div>
                 <div id="status" class="status"></div>
+                <div id="profileSummary" class="profile-summary" hidden>
+                    <div id="profileSummaryText"></div>
+                    <button class="btn btn-secondary" id="deleteDataButton">Delete my resume and application data</button>
+                </div>
             </div>
         </section>
 
@@ -43,21 +63,28 @@
         <section id="jobs" class="page">
             <div class="page-header">
                 <h2 class="page-title">Jobs</h2>
-                <button class="btn" onclick="loadJobs()">Refresh</button>
+                <div class="job-controls">
+                    <input id="jobQuery" type="search" placeholder="Search roles or keywords">
+                    <button class="btn" id="searchJobsButton">Search jobs</button>
+                </div>
             </div>
             <div id="jobsGrid" class="jobs-grid"></div>
+            <div id="tailorResult" class="result-card" hidden></div>
         </section>
 
         <!-- Tracker -->
         <section id="tracker" class="page">
             <div class="page-header">
                 <h2 class="page-title">Tracker</h2>
-                <button class="btn btn-secondary" onclick="exportTracker()">Export CSV</button>
+                <div class="job-controls">
+                    <button class="btn btn-secondary" id="exportTrackerButton">Export CSV</button>
+                </div>
             </div>
             <div id="trackerList" class="tracker-list"></div>
         </section>
     </main>
 
-    <script src="app.js"></script>
+    <script src="config.js"></script>
+    <script type="module" src="app.js"></script>
 </body>
 </html>

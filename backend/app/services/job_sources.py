@@ -1,5 +1,6 @@
-import httpx
 from typing import Any
+
+import httpx
 
 from ..models.schemas import Job
 
@@ -7,7 +8,9 @@ from ..models.schemas import Job
 class RemoteOKAdapter:
     async def fetch(self, filters: dict[str, Any]) -> list[Job]:
         try:
-            async with httpx.AsyncClient(timeout=30.0, headers={"User-Agent": "HireLoop"}) as client:
+            async with httpx.AsyncClient(
+                timeout=30.0, headers={"User-Agent": "HireLoop"}
+            ) as client:
                 resp = await client.get("https://remoteok.io/api")
                 if resp.status_code != 200:
                     return []
@@ -22,8 +25,12 @@ class RemoteOKAdapter:
                         company=item.get("company", "Unknown"),
                         location=item.get("location", "Remote"),
                         description=str(item.get("description", ""))[:500],
-                        requirements=item.get("tags", [])[:10] if isinstance(item.get("tags"), list) else [],
-                        url=item.get("url", f"https://remoteok.io/remote-jobs/{item.get('slug', '')}"),
+                        requirements=item.get("tags", [])[:10]
+                        if isinstance(item.get("tags"), list)
+                        else [],
+                        url=item.get(
+                            "url", f"https://remoteok.io/remote-jobs/{item.get('slug', '')}"
+                        ),
                         source="remoteok",
                     )
                     jobs.append(job)
@@ -47,7 +54,9 @@ class WeWorkRemotelyAdapter:
                     job = Job(
                         id=f"wwr_{item.get('id', '')}",
                         title=item.get("title", "Unknown"),
-                        company=item.get("company", {}).get("name", "Unknown") if isinstance(item.get("company"), dict) else item.get("company", "Unknown"),
+                        company=item.get("company", {}).get("name", "Unknown")
+                        if isinstance(item.get("company"), dict)
+                        else item.get("company", "Unknown"),
                         location="Remote",
                         description=str(item.get("description", ""))[:500],
                         requirements=[],
@@ -78,7 +87,9 @@ class JobicyAdapter:
                         company=item.get("companyName", "Unknown"),
                         location=item.get("jobGeo", "Remote"),
                         description=str(item.get("jobDescription", ""))[:500],
-                        requirements=item.get("jobTags", [])[:10] if isinstance(item.get("jobTags"), list) else [],
+                        requirements=item.get("jobTags", [])[:10]
+                        if isinstance(item.get("jobTags"), list)
+                        else [],
                         url=item.get("url", ""),
                         source="jobicy",
                     )
@@ -109,9 +120,14 @@ class HimalayasAdapter:
                         id=f"him_{item.get('id', '')}",
                         title=item.get("title", "Unknown"),
                         company=item.get("companyName", "Unknown"),
-                        location=item.get("locationRestrictions", ["Remote"])[0] if isinstance(item.get("locationRestrictions"), list) and item.get("locationRestrictions") else "Remote",
+                        location=item.get("locationRestrictions", ["Remote"])[0]
+                        if isinstance(item.get("locationRestrictions"), list)
+                        and item.get("locationRestrictions")
+                        else "Remote",
                         description=str(item.get("description", ""))[:500],
-                        requirements=item.get("skills", [])[:10] if isinstance(item.get("skills"), list) else [],
+                        requirements=item.get("skills", [])[:10]
+                        if isinstance(item.get("skills"), list)
+                        else [],
                         url=item.get("applicationLink", "") or item.get("url", ""),
                         source="himalayas",
                     )
@@ -121,7 +137,7 @@ class HimalayasAdapter:
             return []
 
 
-ADAPTERS = {
+ADAPTERS: dict[str, Any] = {
     "remoteok": RemoteOKAdapter(),
     "weworkremotely": WeWorkRemotelyAdapter(),
     "jobicy": JobicyAdapter(),

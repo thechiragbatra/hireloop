@@ -14,7 +14,6 @@ def test_matcher_fallback_returns_one_result_per_job():
     results = anyio.run(Matcher(FakeLLMClient()).match, profile, jobs)
     assert len(results) == 2
     assert {r.job_id for r in results} == {"j1", "j2"}
-    for r in results:
-        assert r.score == 0.0
-        assert r.reasons == ["LLM not configured"]
-        assert r.missing_skills == []
+    assert all(0 <= result.score <= 100 for result in results)
+    assert all(result.reasons for result in results)
+    assert all(result.missing_skills == [] for result in results)

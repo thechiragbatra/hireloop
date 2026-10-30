@@ -1,4 +1,3 @@
-import hashlib
 import io
 import re
 import uuid
@@ -25,6 +24,9 @@ class ResumeParser:
         text = []
         for para in doc.paragraphs:
             text.append(para.text)
+        for table in doc.tables:
+            for row in table.rows:
+                text.append(" | ".join(cell.text.strip() for cell in row.cells))
         return "\n".join(text)
 
     def _extract_contact(self, text: str) -> Contact:
@@ -32,7 +34,9 @@ class ResumeParser:
         phone = re.findall(r"(\+?\d{1,3}[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}", text)
         linkedin = re.findall(r"(https?://(?:www\.)?linkedin\.com/in/[\w\.-]+)", text)
         github = re.findall(r"(https?://(?:www\.)?github\.com/[\w\.-]+)", text)
-        website = re.findall(r"(https?://(?!www\.linkedin|www\.github)[\w\.-]+\.[\w\.-]+/[\w\.-/]*)", text)
+        website = re.findall(
+            r"(https?://(?!www\.linkedin|www\.github)[\w\.-]+\.[\w\.-]+/[\w\.-/]*)", text
+        )
         return Contact(
             email=email[0] if email else None,
             phone=phone[0] if phone else None,
@@ -42,45 +46,131 @@ class ResumeParser:
         )
 
     def _extract_skills(self, text: str) -> list[str]:
-        common = ["python", "javascript", "typescript", "react", "fastapi", "node", "sql", "postgres", "aws", "docker", "git"]
-        found = []
+        common = [
+            "python",
+            "javascript",
+            "typescript",
+            "java",
+            "go",
+            "c++",
+            "c#",
+            "ruby",
+            "react",
+            "next.js",
+            "node",
+            "fastapi",
+            "django",
+            "flask",
+            "spring",
+            "sql",
+            "postgres",
+            "mysql",
+            "mongodb",
+            "redis",
+            "aws",
+            "gcp",
+            "azure",
+            "docker",
+            "kubernetes",
+            "terraform",
+            "git",
+            "linux",
+            "html",
+            "css",
+            "tailwind",
+            "pandas",
+            "machine learning",
+            "rest api",
+            "graphql",
+            "kafka",
+            "pytest",
+        ]
+        found: list[str] = []
         tl = text.lower()
         for s in common:
-            if s in tl and s.title() not in found and s.upper() not in found:
-                found.append(s.title() if s not in ["sql", "aws"] else s.upper())
+            if re.search(rf"(?<!\w){re.escape(s)}(?!\w)", tl):
+                found.append(s.upper() if s in {"sql", "aws", "gcp", "css", "html"} else s.title())
         return found
+
+    @staticmethod
+    def _sections(text: str) -> dict[str, list[str]]:
+        aliases = {
+            "experience": {
+                "experience",
+                "work experience",
+                "professional experience",
+                "employment",
+            },
+            "education": {"education", "academic background"},
+            "projects": {"projects", "personal projects", "selected projects"},
+            "skills": {"skills", "technical skills", "core competencies", "technologies"},
+        }
+        lookup = {name: section for section, names in aliases.items() for name in names}
+        result: dict[str, list[str]] = {key: [] for key in aliases}
+        current = ""
+        for raw in text.splitlines():
+            line = re.sub(r"\s+", " ", raw).strip(" •\t")
+            if not line:
+                continue
+            heading = re.sub(r"[:|]+$", "", line.lower()).strip()
+            if heading in lookup:
+                current = lookup[heading]
+                continue
+            if current:
+                result[current].append(line)
+        return result
 
     def parse(self, filename: str, content: bytes) -> tuple[Profile, str]:
         ext = filename.lower().split(".")[-1]
         if ext == "pdf":
             raw_text = self.parse_pdf(content)
-        elif ext in ("docx", "doc"):
+        elif ext == "docx":
             raw_text = self.parse_docx(content)
         else:
             raise ValueError("Unsupported file type")
-        hashlib.sha256(content).hexdigest()
+        if not raw_text.strip():
+            raise ValueError("No readable text found. Use a text-based PDF or DOCX file.")
         contact = self._extract_contact(raw_text)
+        sections = self._sections(raw_text)
         skills = self._extract_skills(raw_text)
+        known_skills = {skill.casefold() for skill in skills}
+        for line in sections["skills"]:
+            for skill in re.split(r"[,|•;/]+", line):
+                candidate = skill.strip()
+                if candidate and candidate.casefold() not in known_skills:
+                    skills.append(candidate)
+                    known_skills.add(candidate.casefold())
+
+        def bullets_for(lines: list[str]) -> list[Bullet]:
+            out = []
+            for line in lines:
+                line = re.sub(r"^[-*•▪◦]+\s*", "", line).strip()
+                if line and not re.fullmatch(r"[|\-–— ]+", line):
+                    out.append(Bullet(id=str(uuid.uuid4()), text=line))
+            return out
+
+        exp_bullets = bullets_for(sections["experience"])
+        project_bullets = bullets_for(sections["projects"])
+        education_lines = bullets_for(sections["education"])
+        experience = (
+            [ExperienceItem(id=str(uuid.uuid4()), company="", title="", bullets=exp_bullets)]
+            if exp_bullets
+            else []
+        )
+        projects = (
+            [ProjectItem(id=str(uuid.uuid4()), name="Projects", bullets=project_bullets)]
+            if project_bullets
+            else []
+        )
+        education = []
+        for item in education_lines:
+            education.append(EducationItem(id=str(uuid.uuid4()), institution=item.text))
         profile = Profile(
             id=str(uuid.uuid4()),
             contact=contact,
             skills=skills,
-            experience=[
-                ExperienceItem(
-                    id=str(uuid.uuid4()),
-                    company="",
-                    title="",
-                    bullets=[Bullet(id=str(uuid.uuid4()), text="")],
-                )
-            ],
-            projects=[
-                ProjectItem(
-                    id=str(uuid.uuid4()),
-                    name="",
-                    bullets=[Bullet(id=str(uuid.uuid4()), text="")],
-                    technologies=[],
-                )
-            ],
-            education=[EducationItem(id=str(uuid.uuid4()), institution="")],
+            experience=experience,
+            projects=projects,
+            education=education,
         )
         return profile, raw_text

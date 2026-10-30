@@ -6,6 +6,7 @@ from app.core.auth import get_current_user
 from app.core.logging import log_safe
 from app.core.storage import get_storage
 from app.core.storage_files import get_storage_client
+from app.llm.client import FakeLLMClient
 from app.models.schemas import Job, TailoredResume
 from app.services.tailor import TailorService
 
@@ -46,21 +47,43 @@ async def apply_kit(
             "Return only the cover letter text, no markdown fences.\n\n"
             f"Job: {job.model_dump_json()}\n\nProfile: {profile.model_dump_json()}"
         )
-        cover_letter = await tailor_service.llm.complete(prompt)
+        if isinstance(tailor_service.llm, FakeLLMClient):
+            name = ""
+            if profile.contact and profile.contact.email:
+                name = profile.contact.email.split("@", 1)[0].replace(".", " ").title()
+            evidence = [bullet.text for bullet in tailored.bullets[:3] if bullet.text.strip()]
+            evidence_text = "\n".join(f"- {line}" for line in evidence)
+            if evidence:
+                cover_letter = (
+                    f"Dear Hiring Team,\n\nI am interested in the {job.title} role at {job.company}. "
+                    "The following points summarize relevant information from my resume:\n\n"
+                    f"{evidence_text}\n\nI would welcome the opportunity to discuss the role."
+                    f"\n\nSincerely,\n{name or 'Applicant'}"
+                )
+            else:
+                cover_letter = (
+                    f"Dear Hiring Team,\n\nI am interested in the {job.title} role at {job.company}. "
+                    "I would welcome the opportunity to learn more about the position and discuss my "
+                    f"background.\n\nSincerely,\n{name or 'Applicant'}"
+                )
+        else:
+            cover_letter = await tailor_service.llm.complete(prompt)
 
         pdf_bytes = cover_letter.encode("utf-8")
-        upload_result = await storage_client.upload_cover_letter(
-            pdf_bytes,
-            f"cover-letter-{profile_id}-{job_id}.txt",
-            user_id or "anonymous",
-            content_type="text/plain",
-        )
-        cover_letter_path = upload_result["path"]
+        if hasattr(storage_client, "upload_cover_letter"):
+            upload_result = await storage_client.upload_cover_letter(
+                pdf_bytes,
+                f"cover-letter-{profile_id}-{job_id}.txt",
+                user_id or "local",
+                content_type="text/plain",
+            )
+            cover_letter_path = upload_result.get("path")
     except Exception as exc:
         log_safe(logger, "Cover letter generation failed", error=str(exc)[:200])
 
     return {
         "job_id": job_id,
+        "job_title": job.title,
         "profile_id": profile_id,
         "user_id": user_id,
         "tailored_resume": tailored.model_dump(),

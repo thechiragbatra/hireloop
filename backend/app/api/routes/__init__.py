@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 
-from . import apply_kit, health, jobs, pipeline, profile, tailor, tracker, upload
+from . import apply_kit, health, jobs, pipeline, privacy, profile, runs, tailor, tracker, upload
 
 api_router = APIRouter()
 api_router.include_router(health.router, tags=["health"])
@@ -11,6 +11,5 @@ api_router.include_router(tailor.router, tags=["tailor"])
 api_router.include_router(tracker.router, tags=["tracker"])
 api_router.include_router(pipeline.router, tags=["pipeline"])
 api_router.include_router(apply_kit.router, tags=["apply-kit"])
-from . import runs
-
+api_router.include_router(privacy.router, tags=["privacy"])
 api_router.include_router(runs.router, tags=["runs"])

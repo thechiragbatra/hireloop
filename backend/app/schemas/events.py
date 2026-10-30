@@ -14,4 +14,6 @@ class RunEvent(BaseModel):
     duration_ms: int | None = Field(default=None, description="Duration in milliseconds")
     cost_usd: float | None = Field(default=None, description="Cost in USD")
     message: str | None = Field(default=None, description="Short message without PII")
-    meta: dict[str, Any] | None = Field(default=None, description="Additional metadata with no text")
+    meta: dict[str, Any] | None = Field(
+        default=None, description="Additional metadata with no text"
+    )

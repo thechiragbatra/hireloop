@@ -24,6 +24,31 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Write public frontend configuration
+        env:
+          API_BASE_URL: ${{ vars.API_BASE_URL }}
+          SUPABASE_URL: ${{ vars.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ vars.SUPABASE_ANON_KEY }}
+        run: |
+          python3 - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          config = {
+              "apiBaseUrl": os.environ.get("API_BASE_URL", ""),
+              "supabaseUrl": os.environ.get("SUPABASE_URL", ""),
+              "supabaseAnonKey": os.environ.get("SUPABASE_ANON_KEY", ""),
+          }
+          missing = [key for key, value in config.items() if not value]
+          if missing:
+              raise SystemExit("Set the GitHub Actions variables API_BASE_URL, SUPABASE_URL, and SUPABASE_ANON_KEY before deploying.")
+          Path("frontend/config.js").write_text(
+              "window.HIRELOOP_CONFIG = " + json.dumps(config) + ";\n",
+              encoding="utf-8",
+          )
+          PY
+
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:

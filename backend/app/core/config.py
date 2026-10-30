@@ -11,7 +11,11 @@ class Settings(BaseSettings):
     app_port: int = 8000
     debug: bool = False
 
-    allowed_cors_origins: list[str] = ["http://localhost:5173", "http://localhost:3000", "https://thechiragbatra.github.io"]
+    allowed_cors_origins: list[str] = [
+        "http://localhost:5173",
+        "http://localhost:3000",
+        "https://thechiragbatra.github.io",
+    ]
 
     database_url: str = ""
     database_url_async: str = ""
@@ -63,8 +67,10 @@ def get_settings() -> Settings:
             if url.startswith("postgresql://") and "+" not in url.split("://")[0]:
                 url = url.replace("postgresql://", "postgresql+psycopg2://", 1)
             s.database_url = url
+        elif s.app_env.lower() in {"production", "prod"}:
+            raise RuntimeError("DATABASE_URL is required when APP_ENV=production")
         else:
-            s.database_url = "sqlite:///./app.db" if s.app_env != "production" else ""
+            s.database_url = "sqlite:///./data/hireloop.db"
     else:
         url = s.database_url
         if url.startswith("postgres://"):

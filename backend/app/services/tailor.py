@@ -42,5 +42,14 @@ class TailorService:
         return "\n".join(lines)
 
     def _fallback(self, profile, job: Job, chunks: list[dict]) -> TailoredResume:
-        bullets = [TailoredBullet(text=chunk["text"], source_ids=[chunk["id"]]) for chunk in chunks]
+        target_terms = set((job.title + " " + " ".join(job.requirements)).lower().split())
+        factual_chunks = [chunk for chunk in chunks if chunk.get("text", "").strip()]
+        factual_chunks.sort(
+            key=lambda chunk: sum(term in chunk["text"].lower().split() for term in target_terms),
+            reverse=True,
+        )
+        bullets = [
+            TailoredBullet(text=chunk["text"], source_ids=[chunk["id"]])
+            for chunk in factual_chunks[:20]
+        ]
         return TailoredResume(job_id=job.id, bullets=bullets, summary=None)

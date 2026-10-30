@@ -1,118 +1,94 @@
-# Hireloop - AI Job Copilot
+# Hireloop
 
-An AI-powered job copilot that helps job seekers find matching jobs, tailor resumes honestly with faithfulness checks, and track applications.
+Hireloop helps a job seeker turn a resume into a private profile, discover public job listings, rank them against resume evidence, prepare a fact-grounded resume and cover-letter draft, and track applications. It never submits an application.
 
-## Architecture
+## What works
 
-| Layer | Tech | Deployment |
-|-------|------|------------|
-| Backend | FastAPI + SQLAlchemy (async) + Alembic | Render (free tier) |
-| Database | Supabase Postgres | Supabase |
-| Auth | Supabase Auth (email + Google OAuth) | Supabase |
-| Storage | Supabase Storage (resumes/cover letters) | Supabase |
-| Frontend | React + Vite + TypeScript + Tailwind | GitHub Pages |
-| API client | Axios with Supabase JWT interceptors | GitHub Pages |
+- PDF and DOCX text extraction with contact, skill, experience, project, and education section parsing.
+- Job discovery from Remote OK, We Work Remotely, Jobicy, and Himalayas public feeds.
+- Resume-to-job ranking. With no model key, a deterministic skill and keyword scorer is used; with an LLM key, the configured model can score matches.
+- Tailored resume bullets cite the source profile facts. The no-key fallback copies source bullets verbatim and checks citations locally.
+- Apply-kit generation with a cover-letter draft. Review all generated wording before using it.
+- Saved applications, status changes, CSV export, and a delete-my-data action.
+- Supabase email/password authentication in the browser, verified access tokens in the API, and user-scoped profile/application records.
+- SQLAlchemy persistence on SQLite locally and Postgres in production. Alembic owns production schema migrations.
 
-## Repo layout
+Job feed availability depends on the public providers. Hireloop does not scrape LinkedIn, Indeed, or Naukri. Scanned/image-only PDFs are not OCR processed.
 
-```
-hireloop-1/
-├── backend/              # FastAPI app (app/), migrations, tests
-├── frontend/             # React SPA (src/, vite.config.ts)
-├── .github/workflows/    # CI/CD: frontend deploy to GitHub Pages
-├── Makefile              # backend dev targets
-├── PRIVACY.md            # privacy policy
-└── README.md             # this file
-```
+## Run locally
 
-## Prerequisites
-
-- Python 3.12
-- Node.js 20+
-
-## Backend setup
+Requirements: Python 3.12 and a modern browser.
 
 ```bash
-# Create virtual environment
+cd backend
 python3.12 -m venv .venv
 source .venv/bin/activate
-
-# Install dependencies
-cd backend
-pip install -e ".[dev]"
-
-# Environment
-cp .env.example .env   # fill in real values; never commit .env
-
-# Run
-make run          # uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
-# or
-uvicorn app.main:app --reload
+pip install -r requirements.txt
+cp .env.example .env
+uvicorn app.main:app --reload --port 8000
 ```
 
-Backend dev targets (`make`):
-- `install` — pip install
-- `run` — start uvicorn
-- `test` — pytest
-- `lint` — ruff check
-- `format` — ruff format
-- `typecheck` — mypy
-
-## Frontend setup
+In local development, the API uses a local SQLite database and a local-only identity when Supabase is not configured. Serve the static frontend in another terminal:
 
 ```bash
 cd frontend
-npm install
-
-# Environment
-cp .env.example .env.local   # fill in VITE_API_URL, VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY
-
-# Dev server
-npm run dev                  # http://localhost:5173
-
-# Production build (GitHub Pages base path /hireloop-1/)
-VITE_BASE=/hireloop-1/ npm run build   # output: frontend/dist/
-
-# Preview production build locally
-npm run preview
+python3 -m http.server 5173
 ```
 
-## GitHub Pages deployment
+Open `http://localhost:5173`. The tracked `frontend/config.js` points to the local API and leaves Supabase Auth unset. **Do not use local mode for a public deployment or upload real resumes to a public development server.**
 
-The frontend deploys automatically via GitHub Actions on push to `main` (`.github/workflows/frontend.yml`).
+An optional LLM key enables model-assisted match scoring, tailoring, verification, and cover letters. Without one, scoring and resume tailoring use the local factual fallback.
 
-1. Enable GitHub Pages in repo **Settings → Pages** (source: GitHub Actions).
-2. Add repo **Settings → Secrets and variables → Actions**:
-   - `VITE_API_URL` — your Render backend URL (e.g. `https://hireloop-api.onrender.com`)
-   - `VITE_SUPABASE_URL` — your Supabase project URL
-   - `VITE_SUPABASE_ANON_KEY` — your Supabase anon (public) key
-3. Push to `main` → workflow builds `frontend/dist` and deploys to `https://thechiragbatra.github.io/hireloop-1/`.
+## Production deployment
 
-## Features
+### 1. Create Supabase resources
 
-- Resume parsing (PDF/DOCX) → structured profile
-- Job discovery from public ATS sources (RemoteOK, Greenhouse, Lever, Ashby, Adzuna)
-- Match scoring against your profile
-- Honest resume tailoring — only facts from your profile, with source citations
-- Faithfulness verification — detects fabricated claims
-- Apply kit generation (tailored resume + cover letter, manual submission only)
-- Application tracker
-- Supabase Auth: email/password, Google OAuth, protected routes
-- Row-Level Security (RLS) on every user table, scoped to `auth.uid()`
-- Rate limiting per IP + path
-- Async SQLAlchemy + Alembic migrations
+Create a Supabase project and enable email/password authentication. Configure the allowed redirect URLs to include the GitHub Pages site URL. For Google sign-in, configure Google as an OAuth provider in Supabase and add its callback URL in Google Cloud. Copy the project URL and public anon/publishable key. Do not use a service-role key in the browser. Get the Postgres connection string from Supabase; use its pooler connection if required by your plan/network. Hireloop scopes profile and application rows by the verified JWT subject in the API.
 
-## Privacy
+### 2. Deploy the API to Render
 
-See [PRIVACY.md](PRIVACY.md). Key points:
+Create a Render web service from this repository using the included `render.yaml` blueprint, or configure the service with `backend` as the root directory. Add these environment values in Render:
 
-- All user data scoped to the authenticated user via RLS policies.
-- Uploaded resumes and cover letters stored in a private Supabase Storage bucket, accessed via signed URLs only.
-- No scraping of LinkedIn, Naukri, or Indeed — only public ATS APIs.
-- Data never logged; only IDs, sizes, and timings.
+| Variable | Value |
+| --- | --- |
+| `APP_ENV` | `production` |
+| `DATABASE_URL` | Supabase Postgres connection URI |
+| `SUPABASE_URL` | Supabase project URL |
+| `SUPABASE_ANON_KEY` | Supabase public anon/publishable key |
+| `ALLOWED_CORS_ORIGINS` | JSON list containing `https://thechiragbatra.github.io` and any local origin you need |
+| `LLM_API_KEY` | Optional OpenRouter key for model-assisted generation |
 
-## Cost & constraints
+The start command runs `alembic upgrade head` before Uvicorn. Confirm Render reports the service healthy at `/health`; note the actual service URL for the next step. Keep the database URI and model key in Render’s environment settings only.
 
-- Render free tier: 512 MB RAM, cold starts — keep-warm cron recommended.
-- No `torch`/cross-encoder in the production image; hosted embeddings/reranker behind `Embedder`/`Reranker` interfaces; cross-encoder allowed only in offline `evals/`.
-- Hireloop does not auto-submit applications — apply kits are for manual submission only.
+### 3. Configure GitHub Pages
+
+In GitHub repository Settings → Pages, select GitHub Actions. Add these repository **Variables** under Settings → Secrets and variables → Actions → Variables:
+
+| Variable | Value |
+| --- | --- |
+| `API_BASE_URL` | Render URL ending in `/api/v1` |
+| `SUPABASE_URL` | Supabase project URL |
+| `SUPABASE_ANON_KEY` | Supabase public anon/publishable key |
+
+Push the desired branch to `main`. The Pages workflow writes `frontend/config.js` during deployment and publishes the static site. It fails early if a required variable is missing. The public anon key is expected to be visible in the browser; never put a database password, Supabase service-role key, or LLM key in frontend variables.
+
+### 4. Check the live flow
+
+Open the Pages URL, create an account, confirm the email if Supabase requires it, sign in, upload a text-based PDF or DOCX, search and inspect ranked roles, generate a kit, save a role, change its tracker status, export CSV, then try Delete my resume and application data. Test with a sample resume first.
+
+## Before the first push
+
+The current local `apple-redesign` branch contains commits not present on GitHub `main`. Inspect and merge those changes intentionally. A local version of `backend/.env.example` previously contained credential-shaped Supabase/database values; the working copy now replaces them with placeholders, but the old values remain in the unpushed Git commit history until that history is rewritten. Rotate the database password and Supabase secret key in the Supabase dashboard, then rewrite/squash the unpushed commits so the old values are absent from every commit before pushing. Never copy those values into Render, GitHub, or chat.
+
+## Development commands
+
+```bash
+cd backend
+alembic upgrade head
+pytest
+ruff check .
+ruff format --check .
+mypy app
+```
+
+CI runs migrations, backend tests, lint, formatting, and type checking on pushes and pull requests to `main`.

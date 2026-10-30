@@ -120,6 +120,7 @@ class ApplicationRecord(BaseModel):
     company: str = Field(description="Company name")
     role: str = Field(description="Role/title")
     url: str | None = Field(default=None)
+    profile_id: str | None = Field(default=None)
     match_score: float = Field(ge=0, le=100)
     status: Literal["saved", "applied", "interview", "rejected", "offer", "archived"] = "saved"
     date: datetime = Field(default_factory=datetime.utcnow)

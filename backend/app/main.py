@@ -7,6 +7,12 @@ from app.core.rate_limit import RateLimitMiddleware
 from app.core.storage import get_storage
 
 settings = get_settings()
+if settings.app_env.lower() in {"production", "prod"} and not (
+    settings.supabase_url or settings.supabase_jwks_url or settings.supabase_jwt_secret
+):
+    raise RuntimeError(
+        "Configure SUPABASE_URL or Supabase JWT verification before production startup"
+    )
 
 app = FastAPI(title="hireloop", version="0.1.0")
 
@@ -30,16 +36,18 @@ async def health() -> dict:
 
 @app.get("/")
 async def root() -> dict:
-    return {"app": "hireloop", "status": "under construction"}
+    return {"app": "hireloop", "status": "ready", "docs": "/docs"}
 
 
 @app.on_event("startup")
 def _init_storage() -> None:
     storage = get_storage()
-    storage.create_all()
+    if settings.app_env.lower() not in {"production", "prod"}:
+        storage.create_all()
 
 
 @app.on_event("startup")
 async def startup():
     import os
+
     os.makedirs("data", exist_ok=True)

@@ -1,23 +1,27 @@
 import builtins
 
+from ..core.storage import get_storage
 from ..models.schemas import ApplicationRecord
 
 
 class TrackerService:
     def __init__(self):
-        self._store = {}
+        self.storage = get_storage()
 
-    def upsert(self, item: ApplicationRecord) -> ApplicationRecord:
-        self._store[item.id] = item
+    def upsert(self, item: ApplicationRecord, user_id: str | None = None) -> ApplicationRecord:
+        self.storage.save_application(item.model_dump(mode="json"), user_id=user_id)
         return item
 
     def list(
-        self, profile_id: str | None = None, status: str | None = None
+        self,
+        profile_id: str | None = None,
+        status: str | None = None,
+        user_id: str | None = None,
     ) -> list[ApplicationRecord]:
-        items = list(self._store.values())
-        if status:
-            items = [i for i in items if i.status == status]
-        return items
+        rows = self.storage.list_applications(user_id=user_id, status=status)
+        if profile_id:
+            rows = [row for row in rows if row.get("profile_id") == profile_id]
+        return [ApplicationRecord.model_validate(item) for item in rows]
 
     def export_csv(self, items: builtins.list[ApplicationRecord]) -> bytes:
         import csv
@@ -43,11 +47,12 @@ class TrackerService:
             )
         return buf.getvalue().encode("utf-8")
 
-    def delete(self, record_id: str) -> bool:
-        if record_id in self._store:
-            del self._store[record_id]
-            return True
-        return False
+    def get(self, record_id: str, user_id: str | None = None) -> ApplicationRecord | None:
+        item = self.storage.get_application(record_id, user_id=user_id)
+        return ApplicationRecord.model_validate(item) if item else None
+
+    def delete(self, record_id: str, user_id: str | None = None) -> bool:
+        return bool(self.storage.delete_application(record_id, user_id=user_id))
 
     def clear(self) -> None:
-        self._store.clear()
+        self.storage.clear()

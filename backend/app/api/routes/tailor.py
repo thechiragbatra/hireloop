@@ -3,10 +3,12 @@ from fastapi import APIRouter, Depends, HTTPException
 from app.core.auth import get_current_user
 from app.core.storage import get_storage
 from app.models.schemas import Job, TailoredResume
+from app.services.faithfulness import FaithfulnessService
 from app.services.tailor import TailorService
 
 router = APIRouter()
 tailor_service = TailorService()
+faithfulness_service = FaithfulnessService()
 storage = get_storage()
 
 
@@ -28,4 +30,5 @@ async def tailor(
     profile = Profile(**stored_profile["data"])
     job = Job(**stored_job)
     tailored: TailoredResume = await tailor_service.tailor(profile, job)
-    return tailored.model_dump()
+    verification = await faithfulness_service.verify(profile, tailored)
+    return {**tailored.model_dump(), "faithfulness": verification.model_dump()}

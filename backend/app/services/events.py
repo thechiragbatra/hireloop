@@ -1,5 +1,4 @@
-import json
-from typing import AsyncIterator
+from collections.abc import AsyncIterator
 
 from ..schemas.events import RunEvent
 

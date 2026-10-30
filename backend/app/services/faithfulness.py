@@ -26,12 +26,30 @@ class FaithfulnessService:
     async def verify(self, profile, tailored: TailoredResume) -> FaithfulnessReport:
         chunks = self.chunker.chunk(profile)
         chunk_map = {c["id"]: c["text"] for c in chunks}
-        if isinstance(self.llm, FakeLLMClient) or not tailored.bullets:
+        if not tailored.bullets:
             return FaithfulnessReport(
                 overall_score=1.0,
                 supported_bullets=len(tailored.bullets),
                 total_bullets=len(tailored.bullets),
                 unsupported=[],
+            )
+        if isinstance(self.llm, FakeLLMClient):
+            unsupported = [
+                bullet.text
+                for bullet in tailored.bullets
+                if not bullet.source_ids
+                or any(
+                    source_id not in chunk_map
+                    or bullet.text.strip() not in chunk_map.get(source_id, "")
+                    for source_id in bullet.source_ids
+                )
+            ]
+            supported = len(tailored.bullets) - len(unsupported)
+            return FaithfulnessReport(
+                overall_score=round(supported / len(tailored.bullets), 2),
+                supported_bullets=supported,
+                total_bullets=len(tailored.bullets),
+                unsupported=unsupported,
             )
         try:
             prompt = FAITHFULNESS_PROMPT.format(
@@ -55,10 +73,10 @@ class FaithfulnessService:
         except Exception as exc:  # noqa: BLE001
             log_safe(logger, "Faithfulness check failed", error=str(exc)[:200])
             return FaithfulnessReport(
-                overall_score=1.0,
-                supported_bullets=len(tailored.bullets),
+                overall_score=0.0,
+                supported_bullets=0,
                 total_bullets=len(tailored.bullets),
-                unsupported=[],
+                unsupported=[bullet.text for bullet in tailored.bullets],
             )
 
     def _format_chunks(self, chunks: list[dict]) -> str:

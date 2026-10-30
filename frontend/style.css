@@ -122,6 +122,12 @@ main {
     border-color: var(--accent);
 }
 
+.upload-zone.dragging { border-color: var(--accent); background: #edf5ff; }
+.upload-zone:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible, a:focus-visible {
+    outline: 3px solid color-mix(in srgb, var(--accent) 45%, transparent);
+    outline-offset: 3px;
+}
+
 .upload-zone svg {
     color: var(--text-secondary);
     margin-bottom: 12px;
@@ -265,6 +271,56 @@ main {
     font-size: 13px;
 }
 
+.auth-panel {
+    width: min(420px, calc(100% - 32px));
+    margin: 72px auto;
+    padding: 32px;
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    background: var(--bg);
+    box-shadow: 0 16px 48px rgba(0, 0, 0, .08);
+}
+.auth-panel h1 { font-size: 28px; margin-bottom: 4px; }
+.auth-panel > p { color: var(--text-secondary); margin-bottom: 24px; }
+.auth-panel label { display: grid; gap: 6px; margin: 14px 0; text-align: left; font-size: 14px; }
+.auth-panel input, .job-controls input {
+    width: 100%; padding: 11px 13px; border: 1px solid var(--border); border-radius: 10px;
+    color: var(--text-primary); background: var(--bg); font: inherit;
+}
+.auth-actions, .job-controls, .card-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.auth-actions { margin-top: 18px; }
+.google-button { margin-top: 12px; width: 100%; background: #202124; }
+.job-controls input { min-width: 230px; }
+.profile-summary, .result-card {
+    margin: 24px auto 0; padding: 18px 20px; text-align: left; border: 1px solid var(--border);
+    border-radius: 14px; background: var(--bg);
+}
+.profile-summary { max-width: 560px; display: grid; gap: 4px; }
+.profile-summary span, .match-reasons, .privacy-note { color: var(--text-secondary); font-size: 14px; }
+.jobs-grid { background: transparent; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+.job-card { border: 1px solid var(--border); border-radius: 14px; padding: 20px; }
+.job-meta { flex-wrap: wrap; }
+.muted-badge { color: var(--text-secondary); }
+.match-reasons { margin-top: 10px; }
+.card-actions { margin-top: 18px; }
+.card-actions .btn { font-size: 13px; padding: 8px 12px; }
+.job-link { font-size: 13px; text-decoration: none; color: var(--accent); }
+.empty-state { grid-column: 1 / -1; padding: 24px; color: var(--text-secondary); text-align: center; }
+.result-card { position: relative; max-width: 760px; scroll-margin-top: 70px; }
+.result-card h3 { font-size: 22px; margin-bottom: 10px; }
+.result-card h4 { margin: 22px 0 8px; }
+.result-card ul { padding-left: 20px; }
+.result-card li { margin: 10px 0; }
+.result-card small { display: block; color: var(--text-secondary); }
+.result-card pre { white-space: pre-wrap; font: inherit; line-height: 1.65; padding: 16px; border-radius: 10px; background: var(--bg-secondary); }
+.close-result { float: right; border: 0; background: none; font-size: 26px; cursor: pointer; color: var(--text-secondary); }
+.verification { padding: 9px 12px; border-radius: 9px; display: inline-block; font-size: 14px; }
+.verification.verified { background: #e9f7ee; color: #1b6b35; }
+.verification.review { background: #fff4db; color: #795500; }
+.tracker-item { border-bottom: 1px solid var(--border); }
+.tracker-info a { color: var(--accent); font-size: 13px; }
+.tracker-item select { border: 1px solid var(--border); border-radius: 9px; padding: 8px 10px; background: var(--bg); color: var(--text-primary); }
+
 @media (max-width: 734px) {
     .hero-title {
         font-size: 40px;
@@ -278,4 +334,9 @@ main {
     .nav-links {
         gap: 16px;
     }
+    .jobs-grid { grid-template-columns: 1fr; }
+    .job-controls { width: 100%; }
+    .job-controls input { min-width: 0; flex: 1; }
+    .page-header { align-items: flex-start; flex-direction: column; gap: 14px; }
+    .tracker-item { align-items: flex-start; flex-direction: column; gap: 14px; }
 }
