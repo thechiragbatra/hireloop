@@ -99,6 +99,209 @@ class JobicyAdapter:
             return []
 
 
+class GreenhouseAdapter:
+    """Public Greenhouse ATS board API. Requires company slugs in filters['companies']."""
+
+    def __init__(self):
+        self._default_companies = [
+            "stripe",
+            "airbnb",
+            "shopify",
+            "github",
+            "twitch",
+            "dropbox",
+            "instacart",
+            "reddit",
+            "lyft",
+            "square",
+        ]
+
+    async def fetch(self, filters: dict[str, Any]) -> list[Job]:
+        companies = filters.get("companies") or self._default_companies
+        jobs: list[Job] = []
+        try:
+            async with httpx.AsyncClient(timeout=30.0) as client:
+                for company in companies[:10]:
+                    try:
+                        resp = await client.get(
+                            f"https://boards-api.greenhouse.io/v1/boards/{company}/jobs"
+                        )
+                        if resp.status_code != 200:
+                            continue
+                        data = resp.json()
+                        for item in data.get("jobs", [])[:20]:
+                            job = Job(
+                                id=f"gh_{item.get('id', '')}",
+                                title=item.get("title", "Unknown"),
+                                company=company.title(),
+                                location=item.get("location", {}).get("name", "Remote"),
+                                description=str(item.get("content", ""))[:500],
+                                requirements=[],
+                                url=item.get("absolute_url", ""),
+                                source="greenhouse",
+                            )
+                            jobs.append(job)
+                    except Exception:
+                        continue
+        except Exception:
+            pass
+        return jobs
+
+
+class LeverAdapter:
+    """Public Lever ATS posting API. Requires company slugs in filters['companies']."""
+
+    def __init__(self):
+        self._default_companies = [
+            "netflix",
+            "spotify",
+            "figma",
+            "notion",
+            "linear",
+            "replit",
+            "vercel",
+            "anthropic",
+            "openai",
+            "scale",
+        ]
+
+    async def fetch(self, filters: dict[str, Any]) -> list[Job]:
+        companies = filters.get("companies") or self._default_companies
+        jobs: list[Job] = []
+        try:
+            async with httpx.AsyncClient(timeout=30.0) as client:
+                for company in companies[:10]:
+                    try:
+                        resp = await client.get(
+                            f"https://api.lever.co/v0/postings/{company}?mode=json"
+                        )
+                        if resp.status_code != 200:
+                            continue
+                        data = resp.json()
+                        for item in data[:20]:
+                            if not isinstance(item, dict):
+                                continue
+                            job = Job(
+                                id=f"lv_{item.get('id', '')}",
+                                title=item.get("text", "Unknown"),
+                                company=company.title(),
+                                location=(
+                                    item.get("categories", {}).get("location", "Remote")
+                                    if isinstance(item.get("categories"), dict)
+                                    else "Remote"
+                                ),
+                                description=str(item.get("descriptionPlain", ""))[:500],
+                                requirements=[],
+                                url=item.get("applyUrl", ""),
+                                source="lever",
+                            )
+                            jobs.append(job)
+                    except Exception:
+                        continue
+        except Exception:
+            pass
+        return jobs
+
+
+class AshbyAdapter:
+    """Public Ashby ATS posting API. Requires company slugs in filters['companies']."""
+
+    def __init__(self):
+        self._default_companies = [
+            "linear",
+            "replit",
+            "vercel",
+            "anthropic",
+            "openai",
+            "scale",
+            "perplexity",
+            "cohere",
+        ]
+
+    async def fetch(self, filters: dict[str, Any]) -> list[Job]:
+        companies = filters.get("companies") or self._default_companies
+        jobs: list[Job] = []
+        try:
+            async with httpx.AsyncClient(timeout=30.0) as client:
+                for company in companies[:10]:
+                    try:
+                        resp = await client.get(
+                            f"https://apply.ashbyhq.com/api/1.0/jobs/postings?organization={company}"
+                        )
+                        if resp.status_code != 200:
+                            continue
+                        data = resp.json()
+                        for item in data.get("results", [])[:20]:
+                            if not isinstance(item, dict):
+                                continue
+                            job = Job(
+                                id=f"ash_{item.get('id', '')}",
+                                title=item.get("title", "Unknown"),
+                                company=company.title(),
+                                location="Remote",
+                                description=str(item.get("description", ""))[:500],
+                                requirements=[],
+                                url=item.get("applicationUrl", ""),
+                                source="ashby",
+                            )
+                            jobs.append(job)
+                    except Exception:
+                        continue
+        except Exception:
+            pass
+        return jobs
+
+
+class AdzunaAdapter:
+    """Adzuna public job search API. Requires ADZUNA_APP_ID and ADZUNA_APP_KEY in env."""
+
+    def __init__(self):
+        from app.core.config import get_settings
+
+        settings = get_settings()
+        self.app_id = settings.adzuna_app_id
+        self.app_key = settings.adzuna_app_key
+
+    async def fetch(self, filters: dict[str, Any]) -> list[Job]:
+        if not self.app_id or not self.app_key:
+            return []
+        country = filters.get("country", "us")
+        query = filters.get("query", "software engineer")
+        jobs: list[Job] = []
+        try:
+            async with httpx.AsyncClient(timeout=30.0) as client:
+                resp = await client.get(
+                    f"https://api.adzuna.com/v1/api/jobs/{country}/search/1",
+                    params={
+                        "app_id": self.app_id,
+                        "app_key": self.app_key,
+                        "results_per_page": 30,
+                        "what": query,
+                        "content-type": "application/json",
+                    },
+                )
+                if resp.status_code != 200:
+                    return []
+                data = resp.json()
+                for item in data.get("results", [])[:30]:
+                    if not isinstance(item, dict):
+                        continue
+                    job = Job(
+                        id=f"adz_{item.get('id', '')}",
+                        title=item.get("title", "Unknown"),
+                        company=item.get("company", {}).get("display_name", "Unknown"),
+                        location=item.get("location", {}).get("display_name", "Remote"),
+                        description=str(item.get("description", ""))[:500],
+                        requirements=[],
+                        url=item.get("redirect_url", ""),
+                        source="adzuna",
+                    )
+                    jobs.append(job)
+        except Exception:
+            pass
+        return jobs
+
+
 class OttaAdapter:
     async def fetch(self, filters: dict[str, Any]) -> list[Job]:
         return []
@@ -141,5 +344,10 @@ ADAPTERS: dict[str, Any] = {
     "remoteok": RemoteOKAdapter(),
     "weworkremotely": WeWorkRemotelyAdapter(),
     "jobicy": JobicyAdapter(),
+    "greenhouse": GreenhouseAdapter(),
+    "lever": LeverAdapter(),
+    "ashby": AshbyAdapter(),
+    "adzuna": AdzunaAdapter(),
     "himalayas": HimalayasAdapter(),
+    "otta": OttaAdapter(),
 }
